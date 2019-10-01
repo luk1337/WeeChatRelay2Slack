@@ -80,6 +80,10 @@ class SlackClient:
             if 'user' not in data:
                 return
 
+            # Suppress all 'subtype' messages, eg. channel_join
+            if 'subtype' in data:
+                return
+
             channel, text = self.get_channel_by_id(data['channel'])['name'], data['text']
 
             self.message_callback(channel, text)
