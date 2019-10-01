@@ -1,0 +1,19 @@
+RELAY = {
+    'hostname': '',
+    'password': '',
+    'port': 0,
+    'use_ssl': False,
+}
+
+SLACK = {
+    'api_token': '',
+    'bot_token': '',
+}
+
+GLOBAL = {
+    # channel [irc => slack, btw slack does not have '#' before channel name]
+    'channels': {
+        'irc.freenode.#lineageos': 'lineageos',
+        'irc.freenode.#lineageos-dev': 'lineageos-dev',
+    },
+}
