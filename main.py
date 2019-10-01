@@ -22,13 +22,11 @@ def on_buffer_line_added(e):
     if buffer is None:
         return
 
-    nick = None
-
     for tag in e['tags_array']:
         if tag.startswith("nick_"):
             nick = tag[5:]
-
-    if nick is None:
+            break
+    else:
         return
 
     buffer_name, msg = buffer['full_name'], e['message']
