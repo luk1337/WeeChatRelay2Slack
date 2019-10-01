@@ -1,5 +1,6 @@
 import asyncio
 import concurrent
+import time
 from threading import current_thread
 
 import slack
@@ -91,6 +92,7 @@ class SlackClient:
 
     def kill_me(self):
         while current_thread().is_alive:
+            time.sleep(0.1)
             pass
 
         # RIP
