@@ -62,7 +62,13 @@ class RelayClient:
     def get_buffers(self):
         self.sock.send_async('hdata buffer:gui_buffers(*) full_name')
 
-        response = self.wait_for_response()
+        response = None
+
+        # Pretend that this doesn't exist either
+        try:
+            response = self.wait_for_response()
+        except RecursionError:
+            pass
 
         if response is not None:
             buffers = response.get_hdata_result()
