@@ -53,9 +53,12 @@ class RelayClient:
                 return None
 
     def get_buffer_by_full_name(self, full_name):
-        for buffer in self.get_buffers():
-            if buffer['__path'][0] == full_name:
-                return buffer
+        buffers = self.get_buffers()
+
+        if buffers is not None:
+            for buffer in buffers:
+                if buffer['__path'][0] == full_name:
+                    return buffer
 
         return None
 
