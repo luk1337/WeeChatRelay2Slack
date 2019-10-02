@@ -7,6 +7,7 @@ from utils import Utils
 
 
 class RelayClient:
+    last_buffers: list
     sock: WeeChatSocket
 
     def __init__(self):
@@ -48,7 +49,11 @@ class RelayClient:
                 buffers = ret.get_hdata_result()
 
                 if isinstance(buffers, list):
+                    self.last_buffers = buffers
                     return buffers
+
+                if self.last_buffers is not None:
+                    return self.last_buffers
 
                 return None
 
