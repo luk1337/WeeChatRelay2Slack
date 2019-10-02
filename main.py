@@ -1,6 +1,5 @@
 import sys
 import threading
-import time
 
 import config
 from relay_client import RelayClient
@@ -91,16 +90,6 @@ def on_slack_message(channel, msg):
                 break
 
 
-def create_direct_message_channels():
-    buffers = None
-
-    while buffers is None:
-        buffers = relay_client.get_direct_message_buffers()
-        time.sleep(0.1)
-
-    slack_client.create_dm_channels([buffer.lower() for _, buffer in buffers])
-
-
 if __name__ == '__main__':
     # Uncomment if needed
     # logging.basicConfig(level=logging.DEBUG)
@@ -112,8 +101,7 @@ if __name__ == '__main__':
 
     slack_client = SlackClient()
     slack_client.set_message_callback(on_slack_message)
-
-    create_direct_message_channels()
+    slack_client.create_dm_channels([buffer for _, buffer in relay_client.get_direct_message_buffers()])
 
     threads = [
         threading.Thread(target=relay_client.run),

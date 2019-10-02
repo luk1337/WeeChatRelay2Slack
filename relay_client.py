@@ -45,10 +45,10 @@ class RelayClient:
         self.sock.send_async('sync * buffers,upgrade,buffer,nicklist')
 
     def get_direct_message_buffers(self):
-        buffers = self.get_buffers()
+        buffers = None
 
-        if buffers is None:
-            return None
+        while buffers is None:
+            buffers = self.get_buffers()
 
         ret = []
 
