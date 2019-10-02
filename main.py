@@ -60,13 +60,13 @@ def sync_direct_message_buffers():
 
     while threading.current_thread().is_alive:
         # Update direct message buffers every 15 seconds
-        if int(time.time()) % 15 == 0:
+        if time.time() % 15.0 == 0:
             buffers = relay_client.get_direct_message_buffers()
 
             if buffers is not None:
                 slack_client.create_dm_channels([buffer.lower() for _, buffer in buffers])
 
-        time.sleep(1)
+        time.sleep(0.1)
 
 
 if __name__ == '__main__':
