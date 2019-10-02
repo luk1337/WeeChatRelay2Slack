@@ -15,7 +15,11 @@ slack_client: SlackClient
 def on_buffer_line_added(e):
     global relay_client, slack_client
 
-    if 'irc_privmsg' not in e['tags_array']:
+    is_join = 'irc_join' in e['tags_array']
+    is_part_or_quit = 'irc_part' in e['tags_array'] or 'irc_quit' in e['tags_array']
+    is_privmsg = 'irc_privmsg' in e['tags_array']
+
+    if not any((is_join, is_part_or_quit, is_privmsg)):
         return
 
     buffer = relay_client.wait_for_buffer_by_full_name(e['buffer'])
@@ -32,16 +36,22 @@ def on_buffer_line_added(e):
 
     buffer_name, msg = buffer['full_name'], e['message']
 
-    if buffer_name in config.GLOBAL['channels']:
-        slack_client.send_message(config.GLOBAL['channels'][buffer_name], nick, msg)
-    else:
+    if buffer_name not in config.GLOBAL['channels']:
         buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
 
         if buffer_name is not None:
             # Wait for slack channel
             while buffer_name not in slack_client.last_dm_channels:
                 pass
+    else:
+        buffer_name = config.GLOBAL['channels'][buffer_name]
 
+    if buffer_name is not None:
+        if is_join:
+            slack_client.send_me_message(buffer_name, nick, "joined")
+        if is_part_or_quit:
+            slack_client.send_me_message(buffer_name, nick, "left")
+        elif is_privmsg:
             if 'irc_action' in e['tags_array']:
                 slack_client.send_me_message(buffer_name, nick, msg.split(' ', 1)[1])
             else:
