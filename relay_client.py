@@ -14,7 +14,25 @@ class RelayClient:
         self.sock = WeeChatSocket(config.RELAY['hostname'], config.RELAY['port'], config.RELAY['use_ssl'])
         self.sock.connect(config.RELAY['password'])
 
+        self.ping()
         self.sync_all()
+
+    def wait_for_response(self, timeout=5):
+        start = time.time()
+
+        while time.time() < start + timeout:
+            ret = self.sock.poll()
+
+            if ret is not None:
+                return ret
+
+        return None
+
+    def ping(self):
+        self.sock.send_async('ping')
+
+        if self.wait_for_response() is None:
+            raise Exception("Failed to receive pong back")
 
     def sync_all(self):
         for buffer in self.get_buffers():
