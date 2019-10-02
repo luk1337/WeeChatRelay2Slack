@@ -7,12 +7,13 @@ from utils import Utils
 
 
 class RelayClient:
-    last_buffers: list
     sock: WeeChatSocket
 
     def __init__(self):
         self.sock = WeeChatSocket(config.RELAY['hostname'], config.RELAY['port'], config.RELAY['use_ssl'])
         self.sock.connect(config.RELAY['password'])
+
+        self.last_buffers = None
 
         self.ping()
         self.sync_all()
@@ -84,6 +85,15 @@ class RelayClient:
                     return buffer
 
         return None
+
+    def wait_for_buffer_by_full_name(self, full_name):
+        buffer = None
+
+        while buffer is None:
+            buffer = self.get_buffer_by_full_name(full_name)
+            time.sleep(0.1)
+
+        return buffer
 
     def input(self, full_name, msg):
         self.sock.send_async('input {} {}'.format(full_name, msg))

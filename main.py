@@ -18,10 +18,7 @@ def on_buffer_line_added(e):
     if 'irc_privmsg' not in e['tags_array']:
         return
 
-    buffer = relay_client.get_buffer_by_full_name(e['buffer'])
-
-    if buffer is None:
-        return
+    buffer = relay_client.wait_for_buffer_by_full_name(e['buffer'])
 
     if 'full_name' not in buffer:
         return
@@ -41,6 +38,10 @@ def on_buffer_line_added(e):
         buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
 
         if buffer_name is not None:
+            # Wait for slack channel
+            while buffer_name not in slack_client.last_dm_channels:
+                pass
+
             slack_client.send_message(buffer_name, nick, msg)
 
 
@@ -48,7 +49,15 @@ def on_buffer_opened(e):
     buffer_name = Utils.get_slack_direct_message_channel_for_buffer(e['full_name'])
 
     if buffer_name is not None and buffer_name not in slack_client.last_dm_channels:
-        slack_client.create_dm_channels(slack_client.last_dm_channels + buffer_name)
+        slack_client.create_dm_channels(slack_client.last_dm_channels + [buffer_name])
+
+
+def on_buffer_closing(e):
+    buffer_name = Utils.get_slack_direct_message_channel_for_buffer(e['full_name'])
+
+    if buffer_name is not None and buffer_name in slack_client.last_dm_channels:
+        slack_client.last_dm_channels.remove(buffer_name)
+        slack_client.clean_up_dm_channels(slack_client.last_dm_channels)
 
 
 def on_slack_message(channel, msg):
@@ -65,18 +74,14 @@ def on_slack_message(channel, msg):
                 break
 
 
-def sync_direct_message_buffers():
-    global relay_client, slack_client
+def create_direct_message_channels():
+    buffers = None
 
-    while threading.current_thread().is_alive:
-        # Update direct message buffers every 15 seconds
-        if time.time() % 15.0 <= 0.05:
-            buffers = relay_client.get_direct_message_buffers()
+    while buffers is None:
+        buffers = relay_client.get_direct_message_buffers()
+        time.sleep(0.1)
 
-            if buffers is not None:
-                slack_client.create_dm_channels([buffer.lower() for _, buffer in buffers])
-
-        time.sleep(0.05)
+    slack_client.create_dm_channels([buffer.lower() for _, buffer in buffers])
 
 
 if __name__ == '__main__':
@@ -86,15 +91,17 @@ if __name__ == '__main__':
     relay_client = RelayClient()
     relay_client.sock.on('buffer_line_added', on_buffer_line_added)
     relay_client.sock.on('buffer_opened', on_buffer_opened)
+    relay_client.sock.on('buffer_closing', on_buffer_closing)
 
     slack_client = SlackClient()
     slack_client.set_message_callback(on_slack_message)
+
+    create_direct_message_channels()
 
     threads = [
         threading.Thread(target=relay_client.run),
         threading.Thread(target=slack_client.kill_me),
         threading.Thread(target=slack_client.run),
-        threading.Thread(target=sync_direct_message_buffers),
     ]
 
     [thread.start() for thread in threads]
