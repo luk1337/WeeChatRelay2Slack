@@ -1,5 +1,4 @@
 import asyncio
-import concurrent
 import time
 from threading import current_thread
 
@@ -170,5 +169,5 @@ class SlackClient:
         self.future = asyncio.ensure_future(self.rtm_client._connect_and_read(), loop=self.rtm_client._event_loop)
         try:
             self.rtm_client._event_loop.run_until_complete(self.future)
-        except concurrent.futures._base.CancelledError:
+        except asyncio.CancelledError:
             pass
