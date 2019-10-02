@@ -1,10 +1,11 @@
-import logging
 import sys
 import threading
+import time
 
 import config
 from relay_client import RelayClient
 from slack_client import SlackClient
+from utils import Utils
 
 # globals
 relay_client: RelayClient
@@ -33,15 +34,39 @@ def on_buffer_line_added(e):
 
     if buffer_name in config.GLOBAL['channels']:
         slack_client.send_message(config.GLOBAL['channels'][buffer_name], nick, msg)
+    else:
+        buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
+
+        if buffer_name is not None:
+            slack_client.send_message(buffer_name, nick, msg)
 
 
 def on_slack_message(channel, msg):
     global relay_client
 
-    for weechat_channel, slack_channel in config.GLOBAL['channels'].items():
-        if slack_channel == channel:
-            relay_client.input(weechat_channel, msg)
-            break
+    weechat_channel = Utils.get_relay_direct_message_channel_for_buffer(channel)
+
+    if weechat_channel is not None:
+        relay_client.input(weechat_channel, msg)
+    else:
+        for weechat_channel, slack_channel in config.GLOBAL['channels'].items():
+            if slack_channel == channel:
+                relay_client.input(weechat_channel, msg)
+                break
+
+
+def sync_direct_message_buffers():
+    global relay_client, slack_client
+
+    while threading.current_thread().is_alive:
+        # Update direct message buffers every 15 seconds
+        if int(time.time()) % 15 == 0:
+            buffers = relay_client.get_direct_message_buffers()
+
+            if buffers is not None:
+                slack_client.create_dm_channels([buffer.lower() for _, buffer in buffers])
+
+        time.sleep(1)
 
 
 if __name__ == '__main__':
@@ -58,6 +83,7 @@ if __name__ == '__main__':
         threading.Thread(target=relay_client.run),
         threading.Thread(target=slack_client.kill_me),
         threading.Thread(target=slack_client.run),
+        threading.Thread(target=sync_direct_message_buffers),
     ]
 
     [thread.start() for thread in threads]

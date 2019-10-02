@@ -3,6 +3,7 @@ from threading import current_thread
 
 import config
 from pyweechat.pyweechat import WeeChatSocket
+from utils import Utils
 
 
 class RelayClient:
@@ -12,8 +13,30 @@ class RelayClient:
         self.sock = WeeChatSocket(config.RELAY['hostname'], config.RELAY['port'], config.RELAY['use_ssl'])
         self.sock.connect(config.RELAY['password'])
 
-        for channel in config.GLOBAL['channels']:
-            self.sock.send_async('sync {}'.format(channel))
+        self.sync_all()
+
+    def sync_all(self):
+        for buffer in self.get_buffers():
+            self.sock.send_async('sync {}'.format(buffer['full_name']))
+
+    def get_direct_message_buffers(self):
+        buffers = self.get_buffers()
+
+        if buffers is None:
+            return None
+
+        ret = []
+
+        for channel in buffers:
+            if 'full_name' not in channel:
+                continue
+
+            channel_name = Utils.get_slack_direct_message_channel_for_buffer(channel['full_name'])
+
+            if channel_name is not None:
+                ret.append((channel['full_name'], channel_name))
+
+        return ret
 
     def get_buffers(self):
         self.sock.send_async('hdata buffer:gui_buffers(*) full_name')
@@ -27,7 +50,7 @@ class RelayClient:
                 if isinstance(buffers, list):
                     return buffers
 
-                return []
+                return None
 
     def get_buffer_by_full_name(self, full_name):
         for buffer in self.get_buffers():

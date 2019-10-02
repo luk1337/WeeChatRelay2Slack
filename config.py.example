@@ -16,4 +16,8 @@ GLOBAL = {
         'irc.freenode.#lineageos': 'lineageos',
         'irc.freenode.#lineageos-dev': 'lineageos-dev',
     },
+    # list of accepted priv msg buffers [irc -> slack prefix]
+    'privmsgs': {
+        'irc.freenode.': '_freenode_dm_',
+    },
 }

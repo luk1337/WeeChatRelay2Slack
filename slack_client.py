@@ -6,6 +6,7 @@ from threading import current_thread
 import slack
 
 import config
+from utils import Utils
 
 
 class SlackClient:
@@ -25,7 +26,42 @@ class SlackClient:
         self.sync_channels()
 
     def sync_channels(self):
-        bot_user_id = self.bot_client.auth_test()['user_id']
+        weechat_channels = [channel for _, channel in config.GLOBAL['channels'].items()]
+
+        # Clean-up no longer needed non-dm channels
+        self.clean_up_channels()
+
+        # Create channels, if needed
+        self.create_channels(weechat_channels)
+
+        # Invite bot to all channels
+        self.join_all_channels()
+
+    def create_channels(self, channels):
+        slack_channels = self.user_client.channels_list()['channels']
+
+        channel_created = False
+
+        for channel in channels:
+            for slack_channel in slack_channels:
+                if slack_channel['name'].lower() == channel.lower():
+                    if slack_channel['is_archived']:
+                        self.user_client.channels_unarchive(channel=slack_channel['id'])
+                        channel_created = True
+
+                    break
+            else:
+                self.user_client.channels_create(name=channel)
+                channel_created = True
+
+        if channel_created:
+            self.join_all_channels()
+
+    def create_dm_channels(self, channels):
+        self.create_channels(channels)
+        self.clean_up_dm_channels(channels)
+
+    def clean_up_channels(self):
         weechat_channels = [channel for _, channel in config.GLOBAL['channels'].items()]
         slack_channels = self.user_client.channels_list()['channels']
 
@@ -39,14 +75,31 @@ class SlackClient:
                 if channel['is_archived']:
                     continue
 
+                if Utils.get_relay_direct_message_channel_for_buffer(channel['name']) is not None:
+                    continue
+
                 self.user_client.channels_archive(channel=channel['id'])
 
-        # Create channels, if needed
-        for channel in weechat_channels:
-            if not any(c['name'] == channel for c in slack_channels):
-                self.user_client.channels_create(name=channel)
+    def clean_up_dm_channels(self, channels):
+        slack_channels = self.user_client.channels_list()['channels']
 
-        # Update channel list
+        # Archive all no longer necessary channels
+        for channel in slack_channels:
+            if channel['name'] not in channels:
+                # we can't archive general channels
+                if channel['is_general']:
+                    continue
+
+                if channel['is_archived']:
+                    continue
+
+                if Utils.get_relay_direct_message_channel_for_buffer(channel['name']) is None:
+                    continue
+
+                self.user_client.channels_archive(channel=channel['id'])
+
+    def join_all_channels(self):
+        bot_user_id = self.bot_client.auth_test()['user_id']
         slack_channels = self.user_client.channels_list()['channels']
 
         # Invite bot to all channels
@@ -82,6 +135,10 @@ class SlackClient:
 
             # Suppress all 'subtype' messages, eg. channel_join
             if 'subtype' in data:
+                return
+
+            # We don't want to forward slackbot messages
+            if data['user'] == 'USLACKBOT':
                 return
 
             channel, text = self.get_channel_by_id(data['channel'])['name'], data['text']
