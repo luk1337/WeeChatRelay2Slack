@@ -69,10 +69,10 @@ class RelayClient:
                 self.last_buffers = buffers
                 return buffers
 
-            if self.last_buffers is not None:
-                return self.last_buffers
+        if self.last_buffers is not None:
+            return self.last_buffers
 
-            return None
+        return None
 
     def get_buffer_by_full_name(self, full_name):
         buffers = self.get_buffers()
