@@ -42,7 +42,10 @@ def on_buffer_line_added(e):
             while buffer_name not in slack_client.last_dm_channels:
                 pass
 
-            slack_client.send_message(buffer_name, nick, msg)
+            if 'irc_action' in e['tags_array']:
+                slack_client.send_me_message(buffer_name, nick, msg.split(' ', 1)[1])
+            else:
+                slack_client.send_message(buffer_name, nick, msg)
 
 
 def on_buffer_opened(e):

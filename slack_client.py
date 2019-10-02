@@ -123,6 +123,9 @@ class SlackClient:
     def send_message(self, channel, username, msg):
         self.bot_client.chat_postMessage(channel=channel, username=username, text=msg)
 
+    def send_me_message(self, channel, username, msg):
+        self.bot_client.chat_postMessage(channel=channel, username='* notice *', text='* {} * {}'.format(username, msg))
+
     def get_channel_by_id(self, channel_id):
         for channel in self.user_client.channels_list()['channels']:
             if channel['id'] == channel_id:
@@ -138,8 +141,11 @@ class SlackClient:
             if 'user' not in data:
                 return
 
-            # Suppress all 'subtype' messages, eg. channel_join
-            if 'subtype' in data:
+            has_subtype = 'subtype' in data
+            is_me_message = has_subtype and data['subtype'] == 'me_message'
+
+            # Suppress all 'subtype' messages but me_message
+            if has_subtype and not is_me_message:
                 return
 
             # We don't want to forward slackbot messages
@@ -148,7 +154,10 @@ class SlackClient:
 
             channel, text = self.get_channel_by_id(data['channel'])['name'], data['text']
 
-            self.message_callback(channel, text)
+            if is_me_message:
+                self.message_callback(channel, '/me ' + text)
+            else:
+                self.message_callback(channel, text)
 
             # A silly workaround to hide forwarded messages and let them reappear once they hit relay
             self.user_client.chat_delete(channel=data['channel'], ts=data['ts'])
