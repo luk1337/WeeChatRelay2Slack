@@ -23,6 +23,9 @@ def on_buffer_line_added(e):
     if buffer is None:
         return
 
+    if 'full_name' not in buffer:
+        return
+
     for tag in e['tags_array']:
         if tag.startswith("nick_"):
             nick = tag[5:]
