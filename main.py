@@ -24,9 +24,6 @@ def on_buffer_line_added(e):
 
     buffer = relay_client.wait_for_buffer_by_full_name(e['buffer'])
 
-    if 'full_name' not in buffer:
-        return
-
     for tag in e['tags_array']:
         if tag.startswith("nick_"):
             nick = tag[5:]
