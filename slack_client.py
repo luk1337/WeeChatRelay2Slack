@@ -40,7 +40,7 @@ class SlackClient:
         # Invite bot to all channels
         self.join_all_channels()
 
-    def create_channels(self, channels):
+    def create_channels(self, channels: list):
         slack_channels = self.user_client.channels_list()['channels']
 
         channel_created = False
@@ -60,7 +60,7 @@ class SlackClient:
         if channel_created:
             self.join_all_channels()
 
-    def create_dm_channels(self, channels):
+    def create_dm_channels(self, channels: list):
         self.create_channels(channels)
         self.clean_up_dm_channels(channels)
 
@@ -85,7 +85,7 @@ class SlackClient:
 
                 self.user_client.channels_archive(channel=channel['id'])
 
-    def clean_up_dm_channels(self, channels):
+    def clean_up_dm_channels(self, channels: list):
         slack_channels = self.user_client.channels_list()['channels']
 
         # Archive all no longer necessary channels
@@ -120,13 +120,13 @@ class SlackClient:
 
             self.user_client.channels_invite(channel=channel['id'], user=bot_user_id)
 
-    def send_message(self, channel, username, msg):
+    def send_message(self, channel: str, username: str, msg: str):
         self.bot_client.chat_postMessage(channel=channel, username=username, text=msg)
 
-    def send_me_message(self, channel, msg):
+    def send_me_message(self, channel: str, msg: str):
         self.bot_client.chat_postMessage(channel=channel, username='* notice *', text=msg)
 
-    def get_channel_by_id(self, channel_id):
+    def get_channel_by_id(self, channel_id: str):
         for channel in self.user_client.channels_list()['channels']:
             if channel['id'] == channel_id:
                 return channel
@@ -162,8 +162,8 @@ class SlackClient:
             # A silly workaround to hide forwarded messages and let them reappear once they hit relay
             self.user_client.chat_delete(channel=data['channel'], ts=data['ts'])
 
-    def set_message_callback(self, f):
-        self.message_callback = f
+    def set_message_callback(self, callback: callable):
+        self.message_callback = callback
 
     def kill_me(self):
         while current_thread().is_alive:

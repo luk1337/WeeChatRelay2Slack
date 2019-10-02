@@ -23,7 +23,7 @@ class RelayClient:
         # Trigger buffers update
         self.sock.send_async('hdata buffer:gui_buffers(*) full_name')
 
-    def wait_for_response(self, timeout=5):
+    def wait_for_response(self, timeout: int = 5):
         start = time.time()
 
         while time.time() < start + timeout:
@@ -101,7 +101,7 @@ class RelayClient:
 
         return buffer
 
-    def input(self, full_name, msg):
+    def input(self, full_name: str, msg: str):
         self.sock.send_async('input {} {}'.format(full_name, msg))
 
     def run(self):
