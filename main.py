@@ -1,3 +1,4 @@
+import logging
 import sys
 import threading
 
@@ -91,8 +92,7 @@ def on_slack_message(channel, msg):
 
 
 if __name__ == '__main__':
-    # Uncomment if needed
-    # logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO, format= '[%(asctime)s] %(message)s')
 
     relay_client = RelayClient()
     relay_client.sock.on('buffer_line_added', on_buffer_line_added)

@@ -1,3 +1,4 @@
+import logging
 import socket
 import time
 from threading import current_thread
@@ -18,6 +19,9 @@ class RelayClient:
 
         self.ping()
         self.sync_all()
+
+        # Trigger buffers update
+        self.sock.send_async('hdata buffer:gui_buffers(*) full_name')
 
     def wait_for_response(self, timeout=5):
         start = time.time()
@@ -66,19 +70,17 @@ class RelayClient:
     def get_buffers(self):
         self.sock.send_async('hdata buffer:gui_buffers(*) full_name')
 
-        response = self.wait_for_response()
+        if self.last_buffers is None:
+            logging.info("Waiting for initial buffers list")
+            response = self.wait_for_response()
 
-        if response is not None:
-            buffers = response.get_hdata_result()
+            if response is not None:
+                buffers = response.get_hdata_result()
 
-            if isinstance(buffers, list):
-                self.last_buffers = buffers
-                return buffers
+                if isinstance(buffers, list):
+                    self.last_buffers = buffers
 
-        if self.last_buffers is not None:
-            return self.last_buffers
-
-        return None
+        return self.last_buffers
 
     def get_buffer_by_full_name(self, full_name):
         buffers = self.get_buffers()
@@ -104,7 +106,12 @@ class RelayClient:
 
     def run(self):
         while current_thread().is_alive:
-            self.sock.poll()
+            response = self.sock.poll()
+
+            if response is not None and not response.id:
+                logging.info("Updating buffers list")
+                self.last_buffers = response.get_hdata_result()
+
             time.sleep(0.05)
 
         self.sock.disconnect()
