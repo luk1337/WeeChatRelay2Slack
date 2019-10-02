@@ -41,6 +41,13 @@ def on_buffer_line_added(e):
             slack_client.send_message(buffer_name, nick, msg)
 
 
+def on_buffer_opened(e):
+    buffer_name = Utils.get_slack_direct_message_channel_for_buffer(e['full_name'])
+
+    if buffer_name is not None and buffer_name not in slack_client.last_dm_channels:
+        slack_client.create_dm_channels(slack_client.last_dm_channels + buffer_name)
+
+
 def on_slack_message(channel, msg):
     global relay_client
 
@@ -75,6 +82,7 @@ if __name__ == '__main__':
 
     relay_client = RelayClient()
     relay_client.sock.on('buffer_line_added', on_buffer_line_added)
+    relay_client.sock.on('buffer_opened', on_buffer_opened)
 
     slack_client = SlackClient()
     slack_client.set_message_callback(on_slack_message)

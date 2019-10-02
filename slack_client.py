@@ -14,6 +14,8 @@ class SlackClient:
     user_client: slack.WebClient
     rtm_client: slack.RTMClient
 
+    last_dm_channels: list
+
     message_callback: callable
 
     def __init__(self):
@@ -24,6 +26,8 @@ class SlackClient:
         self.rtm_client.on(event='message', callback=self.on_message)
 
         self.sync_channels()
+
+        self.last_dm_channels = []
 
     def sync_channels(self):
         weechat_channels = [channel for _, channel in config.GLOBAL['channels'].items()]
@@ -60,6 +64,8 @@ class SlackClient:
     def create_dm_channels(self, channels):
         self.create_channels(channels)
         self.clean_up_dm_channels(channels)
+
+        self.last_dm_channels = channels
 
     def clean_up_channels(self):
         weechat_channels = [channel for _, channel in config.GLOBAL['channels'].items()]

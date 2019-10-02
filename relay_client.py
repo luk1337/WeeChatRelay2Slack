@@ -35,8 +35,9 @@ class RelayClient:
             raise Exception("Failed to receive pong back")
 
     def sync_all(self):
-        for buffer in self.get_buffers():
-            self.sock.send_async('sync {}'.format(buffer['full_name']))
+        self.sock.send_async('sync')
+        self.sock.send_async('sync *')
+        self.sock.send_async('sync * buffers,upgrade,buffer,nicklist')
 
     def get_direct_message_buffers(self):
         buffers = self.get_buffers()
