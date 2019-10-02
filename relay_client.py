@@ -97,7 +97,7 @@ class RelayClient:
 
         while buffer is None:
             buffer = self.get_buffer_by_full_name(full_name)
-            time.sleep(0.1)
+            time.sleep(0.15)
 
         return buffer
 
@@ -112,6 +112,6 @@ class RelayClient:
                 logging.info("Updating buffers list")
                 self.last_buffers = response.get_hdata_result()
 
-            time.sleep(0.05)
+            time.sleep(0.15)
 
         self.sock.disconnect()

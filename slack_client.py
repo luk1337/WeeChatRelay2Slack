@@ -167,7 +167,7 @@ class SlackClient:
 
     def kill_me(self):
         while current_thread().is_alive:
-            time.sleep(0.05)
+            time.sleep(0.15)
             pass
 
         # RIP
