@@ -124,7 +124,7 @@ class SlackClient:
         self.bot_client.chat_postMessage(channel=channel, username=username, text=msg)
 
     def send_me_message(self, channel, username, msg):
-        self.bot_client.chat_postMessage(channel=channel, username='* notice *', text='* {} * {}'.format(username, msg))
+        self.bot_client.chat_postMessage(channel=channel, username='* notice *', text='*{}* {}'.format(username, msg))
 
     def get_channel_by_id(self, channel_id):
         for channel in self.user_client.channels_list()['channels']:
