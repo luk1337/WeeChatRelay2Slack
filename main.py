@@ -15,21 +15,25 @@ slack_client: SlackClient
 def on_buffer_line_added(e):
     global relay_client, slack_client
 
+    is_401 = 'irc_401' in e['tags_array']
+    is_402 = 'irc_402' in e['tags_array']
     is_join = 'irc_join' in e['tags_array']
     is_part_or_quit = 'irc_part' in e['tags_array'] or 'irc_quit' in e['tags_array']
     is_privmsg = 'irc_privmsg' in e['tags_array']
 
-    if not any((is_join, is_part_or_quit, is_privmsg)):
+    if not any((is_401, is_402, is_join, is_part_or_quit, is_privmsg)):
         return
 
     buffer = relay_client.wait_for_buffer_by_full_name(e['buffer'])
 
     for tag in e['tags_array']:
-        if tag.startswith("nick_"):
+        if tag.startswith('nick_'):
             nick = tag[5:]
             break
     else:
-        return
+        # 401, 402 don't put nick_{} in tags
+        if not any((is_401, is_402)):
+            return
 
     buffer_name, msg = buffer['full_name'], e['message']
 
@@ -44,13 +48,17 @@ def on_buffer_line_added(e):
         buffer_name = config.GLOBAL['channels'][buffer_name]
 
     if buffer_name is not None:
-        if is_join:
-            slack_client.send_me_message(buffer_name, nick, "joined")
-        if is_part_or_quit:
-            slack_client.send_me_message(buffer_name, nick, "left")
+        if is_401:
+            slack_client.send_me_message(buffer_name, 'No such nick/channel')
+        elif is_402:
+            slack_client.send_me_message(buffer_name, 'No such server')
+        elif is_join:
+            slack_client.send_me_message(buffer_name, '*{}* joined'.format(nick))
+        elif is_part_or_quit:
+            slack_client.send_me_message(buffer_name, '*{}* left'.format(nick))
         elif is_privmsg:
             if 'irc_action' in e['tags_array']:
-                slack_client.send_me_message(buffer_name, nick, msg.split(' ', 1)[1])
+                slack_client.send_me_message(buffer_name, '*{}* {}'.format(nick, msg.split(' ', 1)[1]))
             else:
                 slack_client.send_message(buffer_name, nick, msg)
 
@@ -61,7 +69,7 @@ def on_buffer_opened(e):
     buffer_name = Utils.get_slack_direct_message_channel_for_buffer(e['full_name'])
 
     if buffer_name is not None and buffer_name not in slack_client.last_dm_channels:
-        logging.info("Adding DM channel: {}".format(buffer_name))
+        logging.info('Adding DM channel: {}'.format(buffer_name))
 
         slack_client.create_dm_channels(slack_client.last_dm_channels + [buffer_name])
 
@@ -72,7 +80,7 @@ def on_buffer_closing(e):
     buffer_name = Utils.get_slack_direct_message_channel_for_buffer(e['full_name'])
 
     if buffer_name is not None and buffer_name in slack_client.last_dm_channels:
-        logging.info("Closing DM channel: {}".format(buffer_name))
+        logging.info('Closing DM channel: {}'.format(buffer_name))
 
         slack_client.last_dm_channels.remove(buffer_name)
         slack_client.clean_up_dm_channels(slack_client.last_dm_channels)
@@ -93,7 +101,7 @@ def on_slack_message(channel, msg):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format= '[%(asctime)s] %(message)s')
+    logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 
     relay_client = RelayClient()
     relay_client.sock.on('buffer_line_added', on_buffer_line_added)
