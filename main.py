@@ -46,6 +46,8 @@ def on_buffer_line_added(e):
 
 
 def on_buffer_opened(e):
+    global slack_client
+
     buffer_name = Utils.get_slack_direct_message_channel_for_buffer(e['full_name'])
 
     if buffer_name is not None and buffer_name not in slack_client.last_dm_channels:
@@ -53,6 +55,8 @@ def on_buffer_opened(e):
 
 
 def on_buffer_closing(e):
+    global slack_client
+
     buffer_name = Utils.get_slack_direct_message_channel_for_buffer(e['full_name'])
 
     if buffer_name is not None and buffer_name in slack_client.last_dm_channels:
