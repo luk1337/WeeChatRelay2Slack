@@ -82,21 +82,21 @@ class RelayClient:
 
         return self.last_buffers
 
-    def get_buffer_by_full_name(self, full_name):
+    def get_buffer_by_pointer(self, pointer: str):
         buffers = self.get_buffers()
 
         if buffers is not None:
             for buffer in buffers:
-                if buffer['__path'][0] == full_name:
+                if buffer['__path'][0] == pointer:
                     return buffer
 
         return None
 
-    def wait_for_buffer_by_full_name(self, full_name):
+    def wait_for_buffer_by_pointer(self, pointer: str):
         buffer = None
 
         while buffer is None:
-            buffer = self.get_buffer_by_full_name(full_name)
+            buffer = self.get_buffer_by_pointer(pointer)
             time.sleep(0.15)
 
         return buffer
