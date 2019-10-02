@@ -10,18 +10,17 @@ from utils import Utils
 
 class RelayClient:
     sock: WeeChatSocket
+    last_buffers: dict
 
     def __init__(self):
         self.sock = WeeChatSocket(config.RELAY['hostname'], config.RELAY['port'], config.RELAY['use_ssl'])
         self.sock.connect(config.RELAY['password'])
 
-        self.last_buffers = None
-
         self.ping()
-        self.sync_all()
 
-        # Trigger buffers update
-        self.sock.send_async('hdata buffer:gui_buffers(*) full_name')
+        self.last_buffers = self.sock.send('hdata buffer:gui_buffers(*) full_name').get_hdata_result()
+
+        self.sync_all()
 
     def wait_for_response(self, timeout: int = 5):
         start = time.time()
@@ -49,14 +48,9 @@ class RelayClient:
         self.sock.send_async('sync * buffers,upgrade,buffer,nicklist')
 
     def get_direct_message_buffers(self):
-        buffers = None
-
-        while buffers is None:
-            buffers = self.get_buffers()
-
         ret = []
 
-        for channel in buffers:
+        for channel in self.get_buffers():
             channel_name = Utils.get_slack_direct_message_channel_for_buffer(channel['full_name'])
 
             if channel_name is not None:
@@ -66,26 +60,12 @@ class RelayClient:
 
     def get_buffers(self):
         self.sock.send_async('hdata buffer:gui_buffers(*) full_name')
-
-        if self.last_buffers is None:
-            logging.info("Waiting for initial buffers list")
-            response = self.wait_for_response()
-
-            if response is not None:
-                buffers = response.get_hdata_result()
-
-                if isinstance(buffers, list):
-                    self.last_buffers = buffers
-
         return self.last_buffers
 
     def get_buffer_by_pointer(self, pointer: str):
-        buffers = self.get_buffers()
-
-        if buffers is not None:
-            for buffer in buffers:
-                if buffer['__path'][0] == pointer:
-                    return buffer
+        for buffer in self.get_buffers():
+            if buffer['__path'][0] == pointer:
+                return buffer
 
         return None
 
