@@ -60,20 +60,19 @@ class RelayClient:
     def get_buffers(self):
         self.sock.send_async('hdata buffer:gui_buffers(*) full_name')
 
-        while True:
-            ret = self.sock.poll()
+        response = self.wait_for_response()
 
-            if ret is not None:
-                buffers = ret.get_hdata_result()
+        if response is not None:
+            buffers = response.get_hdata_result()
 
-                if isinstance(buffers, list):
-                    self.last_buffers = buffers
-                    return buffers
+            if isinstance(buffers, list):
+                self.last_buffers = buffers
+                return buffers
 
-                if self.last_buffers is not None:
-                    return self.last_buffers
+            if self.last_buffers is not None:
+                return self.last_buffers
 
-                return None
+            return None
 
     def get_buffer_by_full_name(self, full_name):
         buffers = self.get_buffers()
