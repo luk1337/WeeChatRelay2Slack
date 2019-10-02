@@ -57,9 +57,6 @@ class RelayClient:
         ret = []
 
         for channel in buffers:
-            if 'full_name' not in channel:
-                continue
-
             channel_name = Utils.get_slack_direct_message_channel_for_buffer(channel['full_name'])
 
             if channel_name is not None:
