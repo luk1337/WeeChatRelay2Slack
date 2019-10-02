@@ -66,7 +66,7 @@ def sync_direct_message_buffers():
             if buffers is not None:
                 slack_client.create_dm_channels([buffer.lower() for _, buffer in buffers])
 
-        time.sleep(0.1)
+        time.sleep(0.05)
 
 
 if __name__ == '__main__':
