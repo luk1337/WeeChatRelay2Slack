@@ -22,7 +22,12 @@ class RelayClient:
             ret = self.sock.poll()
 
             if ret is not None:
-                return ret.get_hdata_result()
+                buffers = ret.get_hdata_result()
+
+                if isinstance(buffers, list):
+                    return buffers
+
+                return []
 
     def get_buffer_by_full_name(self, full_name):
         for buffer in self.get_buffers():
