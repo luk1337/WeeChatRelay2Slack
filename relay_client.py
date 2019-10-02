@@ -1,8 +1,9 @@
+import socket
 import time
 from threading import current_thread
 
 import config
-from pyweechat.pyweechat import WeeChatSocket
+from pyweechat.pyweechat import WeeChatSocket, WeeChatMessage
 from utils import Utils
 
 
@@ -22,10 +23,13 @@ class RelayClient:
         start = time.time()
 
         while time.time() < start + timeout:
-            ret = self.sock.poll()
+            try:
+                response = self.sock.socket.recv(4096 * 1024)
 
-            if ret is not None:
-                return ret
+                if response:
+                    return WeeChatMessage(response)
+            except socket.error as e:
+                pass
 
         return None
 
