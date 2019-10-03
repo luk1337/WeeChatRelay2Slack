@@ -24,8 +24,6 @@ def on_buffer_line_added(response: dict):
     if not any((is_401, is_402, is_join, is_part_or_quit, is_privmsg)):
         return
 
-    buffer = relay_client.wait_for_buffer_by_pointer(response['buffer'])
-
     for tag in response['tags_array']:
         if tag.startswith('nick_'):
             nick = tag[5:]
@@ -35,6 +33,7 @@ def on_buffer_line_added(response: dict):
         if not any((is_401, is_402)):
             return
 
+    buffer = relay_client.wait_for_buffer_by_pointer(response['buffer'])
     buffer_name, msg = buffer['full_name'], response['message']
 
     if buffer_name not in Config.Global.Channels:
