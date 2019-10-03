@@ -9,6 +9,12 @@ class Config:
         ApiToken = ''
         BotToken = ''
 
+    # Optional gcf-upload config (used for uploading files)
+    # see: https://github.com/luk1337/gcf-upload
+    class GcfUpload:
+        URL = ''
+        ApiKey = ''
+
     class Global:
         # IRC -> Slack channel mapping
         # BTW slack does not have '#' before channel names

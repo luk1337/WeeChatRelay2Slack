@@ -2,6 +2,7 @@ import asyncio
 import time
 from threading import current_thread
 
+import requests
 import slack
 
 from config import Config
@@ -133,6 +134,9 @@ class SlackClient:
 
         return None
 
+    def get_private_file(self, url: str):
+        return requests.get(url, headers={'Authorization': 'Bearer {}'.format(Config.Slack.BotToken)}).content
+
     def on_message(self, **payload):
         if self.message_callback is not None:
             data = payload['data']
@@ -158,6 +162,11 @@ class SlackClient:
                 self.message_callback(channel, '/me ' + text)
             else:
                 self.message_callback(channel, text)
+
+            if Config.GcfUpload.URL and Config.GcfUpload.ApiKey and 'files' in data:
+                for file in data['files']:
+                    url = Utils.upload_to_gcf_upload(self.get_private_file(file['url_private']))
+                    self.message_callback(channel, url)
 
             # A silly workaround to hide forwarded messages and let them reappear once they hit relay
             self.user_client.chat_delete(channel=data['channel'], ts=data['ts'])

@@ -1,5 +1,7 @@
 import re
 
+import requests
+
 from config import Config
 
 
@@ -31,3 +33,11 @@ class Utils:
                 return slack_prefix + name
 
         return None
+
+    @staticmethod
+    def upload_to_gcf_upload(buffer: str):
+        return requests.post(
+            '{}/put'.format(Config.GcfUpload.URL),
+            files={'file': buffer},
+            headers={'X-Api-Key': Config.GcfUpload.ApiKey}
+        ).url
