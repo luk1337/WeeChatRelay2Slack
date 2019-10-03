@@ -2,7 +2,7 @@
 import logging
 import threading
 
-import config
+from config import Config
 from relay_client import RelayClient
 from slack_client import SlackClient
 from utils import Utils
@@ -37,7 +37,7 @@ def on_buffer_line_added(response: dict):
 
     buffer_name, msg = buffer['full_name'], response['message']
 
-    if buffer_name not in config.GLOBAL['channels']:
+    if buffer_name not in Config.Global.Channels:
         buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
 
         if buffer_name is not None:
@@ -45,7 +45,7 @@ def on_buffer_line_added(response: dict):
             while buffer_name not in slack_client.last_dm_channels:
                 pass
     else:
-        buffer_name = config.GLOBAL['channels'][buffer_name]
+        buffer_name = Config.Global.Channels[buffer_name]
 
     if buffer_name is not None:
         if is_401:
@@ -94,7 +94,7 @@ def on_slack_message(channel: str, msg: str):
     if weechat_channel is not None:
         relay_client.input(weechat_channel, msg)
     else:
-        for weechat_channel, slack_channel in config.GLOBAL['channels'].items():
+        for weechat_channel, slack_channel in Config.Global.Channels.items():
             if slack_channel == channel:
                 relay_client.input(weechat_channel, msg)
                 break

@@ -1,6 +1,6 @@
 import re
 
-import config
+from config import Config
 
 
 class Utils:
@@ -12,7 +12,7 @@ class Utils:
 
     @staticmethod
     def get_relay_direct_message_channel_for_buffer(full_name: str):
-        for weechat_prefix, slack_prefix in config.GLOBAL['privmsgs'].items():
+        for weechat_prefix, slack_prefix in Config.Global.PrivMsgs.items():
             if full_name.startswith(slack_prefix):
                 return weechat_prefix + Utils.sanitize_slack_channel_name(full_name, len(slack_prefix))
 
@@ -20,7 +20,7 @@ class Utils:
 
     @staticmethod
     def get_slack_direct_message_channel_for_buffer(full_name: str):
-        for weechat_prefix, slack_prefix in config.GLOBAL['privmsgs'].items():
+        for weechat_prefix, slack_prefix in Config.Global.PrivMsgs.items():
             if not full_name.startswith(weechat_prefix):
                 continue
 

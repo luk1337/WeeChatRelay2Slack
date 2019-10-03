@@ -1,23 +1,23 @@
-RELAY = {
-    'hostname': '',
-    'password': '',
-    'port': 0,
-    'use_ssl': False,
-}
+class Config:
+    class Relay:
+        Hostname = ''
+        Password = ''
+        Port = 0
+        UseSSL = False
 
-SLACK = {
-    'api_token': '',
-    'bot_token': '',
-}
+    class Slack:
+        ApiToken = ''
+        BotToken = ''
 
-GLOBAL = {
-    # channel [irc => slack, btw slack does not have '#' before channel name]
-    'channels': {
-        'irc.freenode.#lineageos': 'lineageos',
-        'irc.freenode.#lineageos-dev': 'lineageos-dev',
-    },
-    # list of accepted priv msg buffers [irc -> slack prefix]
-    'privmsgs': {
-        'irc.freenode.': '_freenode_dm_',
-    },
-}
+    class Global:
+        # IRC -> Slack channel mapping
+        # BTW slack does not have '#' before channel names
+        Channels = {
+            'irc.freenode.#lineageos': 'lineageos',
+            'irc.freenode.#lineageos-dev': 'lineageos-dev',
+        }
+
+        # IRC -> Slack private messages mapping
+        PrivMsgs = {
+            'irc.freenode.': '_freenode_dm_',
+        }

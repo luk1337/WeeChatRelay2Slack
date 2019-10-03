@@ -3,7 +3,7 @@ import socket
 import time
 from threading import current_thread
 
-import config
+from config import Config
 from pyweechat.pyweechat import WeeChatSocket, WeeChatMessage
 from utils import Utils
 
@@ -13,8 +13,8 @@ class RelayClient:
     last_buffers: dict
 
     def __init__(self):
-        self.sock = WeeChatSocket(config.RELAY['hostname'], config.RELAY['port'], config.RELAY['use_ssl'])
-        self.sock.connect(config.RELAY['password'])
+        self.sock = WeeChatSocket(Config.Relay.Hostname, Config.Relay.Port, Config.Relay.UseSSL)
+        self.sock.connect(Config.Relay.Password)
 
         self.ping()
 

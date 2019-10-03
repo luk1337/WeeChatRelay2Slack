@@ -4,7 +4,7 @@ from threading import current_thread
 
 import slack
 
-import config
+from config import Config
 from utils import Utils
 
 
@@ -18,9 +18,9 @@ class SlackClient:
     message_callback: callable
 
     def __init__(self):
-        self.bot_client = slack.WebClient(token=config.SLACK['bot_token'], loop=asyncio.new_event_loop())
-        self.user_client = slack.WebClient(token=config.SLACK['api_token'], loop=asyncio.new_event_loop())
-        self.rtm_client = slack.RTMClient(token=config.SLACK['bot_token'], loop=asyncio.new_event_loop())
+        self.bot_client = slack.WebClient(token=Config.Slack.BotToken, loop=asyncio.new_event_loop())
+        self.user_client = slack.WebClient(token=Config.Slack.ApiToken, loop=asyncio.new_event_loop())
+        self.rtm_client = slack.RTMClient(token=Config.Slack.BotToken, loop=asyncio.new_event_loop())
 
         self.rtm_client.on(event='message', callback=self.on_message)
 
@@ -29,7 +29,7 @@ class SlackClient:
         self.last_dm_channels = []
 
     def sync_channels(self):
-        weechat_channels = [channel for _, channel in config.GLOBAL['channels'].items()]
+        weechat_channels = [channel for _, channel in Config.Global.Channels.items()]
 
         # Clean-up no longer needed non-dm channels
         self.clean_up_channels()
@@ -67,7 +67,7 @@ class SlackClient:
         self.last_dm_channels = channels
 
     def clean_up_channels(self):
-        weechat_channels = [channel for _, channel in config.GLOBAL['channels'].items()]
+        weechat_channels = [channel for _, channel in Config.Global.Channels.items()]
         slack_channels = self.user_client.channels_list()['channels']
 
         # Archive all no longer necessary channels
