@@ -47,14 +47,8 @@ def on_buffer_line_added(response: dict):
         buffer_name = Config.Global.Channels[buffer_name]
 
     if buffer_name is not None:
-        if is_401:
-            slack_client.send_me_message(buffer_name, 'No such nick/channel')
-        elif is_402:
-            slack_client.send_me_message(buffer_name, 'No such server')
-        elif is_join:
-            slack_client.send_me_message(buffer_name, '*{}* joined'.format(nick))
-        elif is_part_or_quit:
-            slack_client.send_me_message(buffer_name, '*{}* left'.format(nick))
+        if any([is_401, is_402, is_join, is_part_or_quit]):
+            slack_client.send_me_message(buffer_name, Utils.weechat_string_remove_color(response['message']))
         elif is_privmsg:
             if 'irc_action' in response['tags_array']:
                 slack_client.send_me_message(buffer_name, '*{}* {}'.format(nick, msg.split(' ', 1)[1]))
