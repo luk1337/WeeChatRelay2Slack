@@ -24,15 +24,6 @@ def on_buffer_line_added(response: dict):
     if not any((is_401, is_402, is_join, is_part_or_quit, is_privmsg)):
         return
 
-    for tag in response['tags_array']:
-        if tag.startswith('nick_'):
-            nick = tag[5:]
-            break
-    else:
-        # 401, 402 don't put nick_{} in tags
-        if not any((is_401, is_402)):
-            return
-
     buffer = relay_client.wait_for_buffer_by_pointer(response['buffer'])
     buffer_name, msg = buffer['full_name'], response['message']
 
@@ -50,10 +41,12 @@ def on_buffer_line_added(response: dict):
         if any([is_401, is_402, is_join, is_part_or_quit]):
             slack_client.send_me_message(buffer_name, Utils.weechat_string_remove_color(response['message']))
         elif is_privmsg:
+            prefix = Utils.weechat_string_remove_color(response['prefix'])
+
             if 'irc_action' in response['tags_array']:
-                slack_client.send_me_message(buffer_name, '*{}* {}'.format(nick, msg.split(' ', 1)[1]))
+                slack_client.send_me_message(buffer_name, '*{}* {}'.format(prefix, msg.split(' ', 1)[1]))
             else:
-                slack_client.send_message(buffer_name, nick, msg)
+                slack_client.send_message(buffer_name, prefix, msg)
 
 
 def on_buffer_opened(response: dict):
