@@ -15,14 +15,16 @@ slack_client: SlackClient
 def on_buffer_line_added(response: dict):
     global relay_client, slack_client
 
-    is_401 = 'irc_401' in response['tags_array']
-    is_402 = 'irc_402' in response['tags_array']
-    is_kick = 'irc_kick' in response['tags_array']
-    is_join = 'irc_join' in response['tags_array']
-    is_part_or_quit = 'irc_part' in response['tags_array'] or 'irc_quit' in response['tags_array']
+    is_generic_server_msg = bool({'irc_401',
+                                  'irc_402',
+                                  'irc_join',
+                                  'irc_kick',
+                                  'irc_part',
+                                  'irc_topic',
+                                  'irc_quit'} & set(response['tags_array']))
     is_privmsg = 'irc_privmsg' in response['tags_array']
 
-    if not any((is_401, is_402, is_kick, is_join, is_part_or_quit, is_privmsg)):
+    if not any((is_generic_server_msg, is_privmsg)):
         return
 
     buffer = relay_client.wait_for_buffer_by_pointer(response['buffer'])
@@ -39,7 +41,7 @@ def on_buffer_line_added(response: dict):
         buffer_name = Config.Global.Channels[buffer_name]
 
     if buffer_name is not None:
-        if any([is_401, is_402, is_kick, is_join, is_part_or_quit]):
+        if is_generic_server_msg:
             slack_client.send_me_message(buffer_name, Utils.weechat_string_remove_color(response['message']))
         elif is_privmsg:
             prefix = Utils.weechat_string_remove_color(response['prefix'])
