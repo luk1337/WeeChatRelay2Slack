@@ -40,7 +40,7 @@ class RelayClient:
         self.sock.send_async('ping')
 
         if self.wait_for_response() is None:
-            raise Exception("Failed to receive pong back")
+            raise Exception('Failed to receive pong back')
 
     def sync_all(self):
         self.sock.send_async('sync')
@@ -86,7 +86,7 @@ class RelayClient:
             response = self.sock.poll()
 
             if response is not None and not response.id:
-                logging.info("Updating buffers list")
+                logging.info('Updating buffers list')
                 self.last_buffers = response.get_hdata_result()
 
             time.sleep(0.15)

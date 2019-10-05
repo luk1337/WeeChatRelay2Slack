@@ -113,7 +113,7 @@ if __name__ == '__main__':
     try:
         [thread.join() for thread in threads]
     except KeyboardInterrupt:
-        logging.info("Bye!")
+        logging.info('Bye!')
 
         # Kill existing threads
         for thread in threads:
