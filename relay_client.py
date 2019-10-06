@@ -10,7 +10,7 @@ from utils import Utils
 
 class RelayClient:
     sock: WeeChatSocket
-    last_buffers: dict
+    buffers: dict
 
     def __init__(self):
         self.sock = WeeChatSocket(Config.Relay.Hostname, Config.Relay.Port, Config.Relay.UseSSL)
@@ -18,7 +18,7 @@ class RelayClient:
 
         self.ping()
 
-        self.last_buffers = self.sock.send('hdata buffer:gui_buffers(*) full_name').get_hdata_result()
+        self.buffers = self.sock.send('hdata buffer:gui_buffers(*) full_name').get_hdata_result()
 
         self.sync_all()
 
@@ -50,20 +50,16 @@ class RelayClient:
     def get_direct_message_buffers(self):
         ret = []
 
-        for channel in self.get_buffers():
-            channel_name = Utils.get_slack_direct_message_channel_for_buffer(channel['full_name'])
+        for buffer in self.buffers:
+            channel_name = Utils.get_slack_direct_message_channel_for_buffer(buffer['full_name'])
 
             if channel_name is not None:
-                ret.append((channel['full_name'], channel_name))
+                ret.append((buffer['full_name'], channel_name))
 
         return ret
 
-    def get_buffers(self):
-        self.sock.send_async('hdata buffer:gui_buffers(*) full_name')
-        return self.last_buffers
-
     def get_buffer_by_pointer(self, pointer: str):
-        for buffer in self.get_buffers():
+        for buffer in self.buffers:
             if buffer['__path'][0] == pointer:
                 return buffer
 
@@ -87,7 +83,7 @@ class RelayClient:
 
             if response is not None and not response.id:
                 logging.info('Updating buffers list')
-                self.last_buffers = response.get_hdata_result()
+                self.buffers = response.get_hdata_result()
 
             time.sleep(0.15)
 
