@@ -39,6 +39,8 @@ class TestWeeChatStringRemoveColor(unittest.TestCase):
         self.assertEqual(Utils.weechat_string_remove_color('\x1B_'), '')
         self.assertEqual(Utils.weechat_string_remove_color('\x1C'), '')
 
+        self.assertEqual(Utils.weechat_string_remove_color('\x1c\x1915LuK1337'), 'LuK1337')
+
         self.assertEqual(Utils.weechat_string_remove_color(
             '\x19F12luk\x1928 (\x1927~luk@kremowka.xyz\x1928)\x19F05 has joined \x1913#titandev-test\x19F05'),
             'luk (~luk@kremowka.xyz) has joined #titandev-test')

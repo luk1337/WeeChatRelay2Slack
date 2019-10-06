@@ -197,8 +197,7 @@ class Utils:
                     i += 1
             elif s[i] == Utils.GUI_COLOR_RESET_CHAR:
                 i += 1
-
-            if i < length:
+            else:
                 buf += s[i]
                 i += 1
 
