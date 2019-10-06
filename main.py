@@ -20,6 +20,7 @@ def on_buffer_line_added(response: dict):
                                   'irc_join',
                                   'irc_kick',
                                   'irc_mode',
+                                  'irc_nick',
                                   'irc_part',
                                   'irc_topic',
                                   'irc_quit'} & set(response['tags_array']))
