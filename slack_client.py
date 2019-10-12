@@ -1,4 +1,5 @@
 import asyncio
+import html
 import json
 import time
 from threading import current_thread
@@ -162,7 +163,7 @@ class SlackClient:
             if data['user'] == 'USLACKBOT':
                 return
 
-            channel, text = self.get_channel_by_id(data['channel'])['name'], data['text']
+            channel, text = self.get_channel_by_id(data['channel'])['name'], html.unescape(data['text'])
 
             if is_me_message:
                 self.message_callback(channel, '/me ' + text)
