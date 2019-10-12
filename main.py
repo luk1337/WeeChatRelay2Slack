@@ -30,7 +30,7 @@ def on_buffer_line_added(response: dict):
         return
 
     buffer = relay_client.wait_for_buffer_by_pointer(response['buffer'])
-    buffer_name, msg = buffer['full_name'], response['message']
+    buffer_name, msg = buffer['full_name'], Utils.weechat_string_remove_color(response['message'])
 
     if buffer_name not in Config.Global.Channels:
         buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
@@ -49,7 +49,7 @@ def on_buffer_line_added(response: dict):
             prefix = Utils.weechat_string_remove_color(response['prefix'])
 
             if 'irc_action' in response['tags_array']:
-                slack_client.send_me_message(buffer_name, '*{}* {}'.format(prefix, msg.split(' ', 1)[1]))
+                slack_client.send_me_message(buffer_name, msg)
             else:
                 slack_client.send_message(buffer_name, prefix, msg)
 
