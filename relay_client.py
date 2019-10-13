@@ -59,16 +59,26 @@ class RelayClient:
         return ret
 
     def get_buffer_by_pointer(self, pointer: str):
+        # Try to find buffer in current buffers list
+        for buffer in self.buffers:
+            if buffer['__path'][0] == pointer:
+                return buffer
+
+        # Update buffers just in case
+        self.buffers = self.sock.send('hdata buffer:gui_buffers(*) full_name').get_hdata_result()
+
+        # Retry
         for buffer in self.buffers:
             if buffer['__path'][0] == pointer:
                 return buffer
 
         return None
 
-    def wait_for_buffer_by_pointer(self, pointer: str):
+    def wait_for_buffer_by_pointer(self, pointer: str, timeout: int = 5):
         buffer = None
+        start = time.time()
 
-        while buffer is None:
+        while time.time() < start + timeout and buffer is None:
             buffer = self.get_buffer_by_pointer(pointer)
             time.sleep(0.15)
 
