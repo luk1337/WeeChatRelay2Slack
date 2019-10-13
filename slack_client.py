@@ -19,12 +19,20 @@ class SlackClient:
     message_callback: callable
 
     def __init__(self):
+        self._check_auth()
+
         self.rtm_client = slack.RTMClient(token=Config.Slack.Token)
         self.rtm_client.on(event='message', callback=self.on_message)
 
         self.sync_channels()
 
         self.last_dm_channels = []
+
+    def _check_auth(self):
+        response = self.api_get('auth.test', Config.Slack.Token)
+
+        if not response['ok']:
+            raise Exception('Invalid Slack token!')
 
     def sync_channels(self):
         # Clean-up no longer needed non-dm channels
