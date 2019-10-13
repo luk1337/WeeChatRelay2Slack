@@ -33,13 +33,16 @@ def on_buffer_line_added(response: dict, run_async: bool = False):
     if not any((is_generic_server_msg, is_privmsg)):
         return
 
-    buffer = relay_client.wait_for_buffer_by_pointer(response['buffer'])
+    if response['buffer'].startswith('gui_'):
+        buffer = relay_client.wait_for_buffer_by_pointer(response['buffer'])
+    else:
+        buffer = relay_client.wait_for_buffer_by_pointer('0x{}'.format(response['buffer']))
 
     if buffer is None:
         logging.error('Timed out while waiting for buffer {}'.format(response['buffer']))
         return
 
-    buffer_name, msg = buffer['full_name'], Utils.weechat_string_remove_color(response['message'])
+    buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(response['message'])
 
     if buffer_name not in Config.Global.Channels:
         buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
@@ -112,16 +115,16 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 
     relay_client = RelayClient()
-    relay_client.sock.on('buffer_line_added', on_buffer_line_added)
-    relay_client.sock.on('buffer_opened', on_buffer_opened)
-    relay_client.sock.on('buffer_closing', on_buffer_closing)
+    relay_client.set_on_buffer_line_added_callback(on_buffer_line_added)
+    relay_client.set_on_buffer_opened_callback_callback(on_buffer_opened)
+    relay_client.set_on_buffer_closing_callback_callback(on_buffer_closing)
 
     slack_client = SlackClient()
     slack_client.set_message_callback(on_slack_message)
     slack_client.create_dm_channels([buffer for _, buffer in relay_client.get_direct_message_buffers()])
 
     threads = [
-        threading.Thread(target=relay_client.run),
+        threading.Thread(target=relay_client.run_thread),
         threading.Thread(target=slack_client.kill_me),
         threading.Thread(target=slack_client.run),
     ]
