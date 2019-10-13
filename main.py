@@ -27,6 +27,10 @@ class WeeChatRelay2Slack:
             threading.Thread(target=self._on_buffer_line_added, args=(response, True)).start()
             return
 
+        buffer_pointer = response.get('buffer', '')
+        message = response.get('message', '')
+        tags_array = response.get('tags_array', [])
+
         is_generic_server_msg = bool({'irc_401',
                                       'irc_402',
                                       'irc_join',
@@ -35,22 +39,22 @@ class WeeChatRelay2Slack:
                                       'irc_nick',
                                       'irc_part',
                                       'irc_topic',
-                                      'irc_quit'} & set(response.get('tags_array', [])))
-        is_privmsg = 'irc_privmsg' in response.get('tags_array', [])
+                                      'irc_quit'} & set(tags_array))
+        is_privmsg = 'irc_privmsg' in tags_array
 
         if not any((is_generic_server_msg, is_privmsg)):
             return
 
-        if response.get('buffer', '').startswith('gui_'):
-            buffer = self.relay_client.wait_for_buffer_by_pointer(response.get('buffer', ''))
+        if buffer_pointer.startswith('gui_'):
+            buffer = self.relay_client.wait_for_buffer_by_pointer(buffer_pointer)
         else:
-            buffer = self.relay_client.wait_for_buffer_by_pointer(f'0x{response.get("buffer", "")}')
+            buffer = self.relay_client.wait_for_buffer_by_pointer(f'0x{buffer_pointer}')
 
         if buffer is None:
-            logging.error(f'Timed out while waiting for buffer {response.get("buffer", "")}')
+            logging.error(f'Timed out while waiting for buffer {buffer_pointer}')
             return
 
-        buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(response.get('message', ''))
+        buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(message)
 
         if buffer_name not in Config.Global.Channels:
             buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
@@ -64,14 +68,12 @@ class WeeChatRelay2Slack:
 
         if buffer_name is not None:
             if is_generic_server_msg:
-                self.slack_client.send_me_message(
-                    buffer_name, Utils.weechat_string_remove_color(response.get('message', '')))
+                self.slack_client.send_me_message(buffer_name, msg)
             elif is_privmsg:
-                prefix = Utils.weechat_string_remove_color(response.get('prefix', ''))
-
-                if 'irc_action' in response.get('tags_array', []):
+                if 'irc_action' in tags_array:
                     self.slack_client.send_me_message(buffer_name, msg)
                 else:
+                    prefix = Utils.weechat_string_remove_color(response.get('prefix', ''))
                     self.slack_client.send_message(buffer_name, prefix, msg)
 
     def _on_buffer_opened(self, response: dict, run_async: bool = False):
