@@ -124,9 +124,8 @@ if __name__ == '__main__':
     slack_client.create_dm_channels([buffer for _, buffer in relay_client.get_direct_message_buffers()])
 
     threads = [
-        threading.Thread(target=relay_client.run_thread),
-        threading.Thread(target=slack_client.kill_me),
-        threading.Thread(target=slack_client.run),
+        *relay_client.tasks(),
+        *slack_client.tasks(),
     ]
 
     [thread.start() for thread in threads]

@@ -1,5 +1,6 @@
 import logging
 import socket
+import threading
 import time
 from datetime import timedelta
 from threading import current_thread
@@ -124,5 +125,7 @@ class RelayClient(WeeChatClient):
 
         return buffer
 
-    def run_thread(self):
-        self.run(lambda: current_thread().is_alive, timedelta(milliseconds=100))
+    def tasks(self):
+        return [
+            threading.Thread(target=lambda: self.run(lambda: current_thread().is_alive, timedelta(milliseconds=100))),
+        ]

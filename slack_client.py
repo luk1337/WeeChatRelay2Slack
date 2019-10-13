@@ -1,6 +1,7 @@
 import asyncio
 import html
 import json
+import threading
 import time
 from threading import current_thread
 
@@ -151,17 +152,23 @@ class SlackClient:
     def set_message_callback(self, callback: callable):
         self.message_callback = callback
 
-    def kill_me(self):
+    def _kill_me(self):
         while current_thread().is_alive:
             time.sleep(0.15)
 
         # RIP
         self.future.cancel()
 
-    def run(self):
+    def _run(self):
         # Close your eyes, pretend that you don't see this code
         self.future = asyncio.ensure_future(self.rtm_client._connect_and_read(), loop=self.rtm_client._event_loop)
         try:
             self.rtm_client._event_loop.run_until_complete(self.future)
         except asyncio.CancelledError:
             pass
+
+    def tasks(self):
+        return [
+            threading.Thread(target=self._kill_me),
+            threading.Thread(target=self._run),
+        ]
