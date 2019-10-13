@@ -20,60 +20,40 @@ class SlackClient:
 
     def __init__(self):
         self._check_auth()
+        self._sync_channels()
 
         self.rtm_client = slack.RTMClient(token=Config.Slack.Token)
-        self.rtm_client.on(event='message', callback=self.on_message)
-
-        self.sync_channels()
+        self.rtm_client.on(event='message', callback=self._on_message)
 
         self.last_dm_channels = []
 
+    def _api_get(self, method: str, **kwargs):
+        return json.loads(requests.get('https://slack.com/api/{}'.format(method), data=kwargs,
+                                       headers={'Authorization': 'Bearer {}'.format(Config.Slack.Token)}).content)
+
+    def _api_post(self, method: str, **kwargs):
+        return json.loads(requests.post('https://slack.com/api/{}'.format(method), data=kwargs,
+                                        headers={'Authorization': 'Bearer {}'.format(Config.Slack.Token)}).content)
+
+    def _raw_get(self, url: str):
+        return requests.get(url, headers={'Authorization': 'Bearer {}'.format(Config.Slack.Token)}).content
+
     def _check_auth(self):
-        response = self.api_get('auth.test')
+        response = self._api_get('auth.test')
 
         if not response['ok']:
             raise Exception('Invalid Slack token!')
 
-    def sync_channels(self):
+    def _sync_channels(self):
         # Clean-up no longer needed non-dm channels
-        self.clean_up_channels()
+        self._clean_up_channels()
 
         # Create channels, if needed
         self.create_channels([channel for _, channel in Config.Global.Channels.items()])
 
-    def api_get(self, method: str, **kwargs):
-        return json.loads(requests.get('https://slack.com/api/{}'.format(method), data=kwargs,
-                                       headers={'Authorization': 'Bearer {}'.format(Config.Slack.Token)}).content)
-
-    def api_post(self, method: str, **kwargs):
-        return json.loads(requests.post('https://slack.com/api/{}'.format(method), data=kwargs,
-                                        headers={'Authorization': 'Bearer {}'.format(Config.Slack.Token)}).content)
-
-    def get_private_file(self, url: str):
-        return requests.get(url, headers={'Authorization': 'Bearer {}'.format(Config.Slack.Token)}).content
-
-    def create_channels(self, channels: list):
-        slack_channels = self.api_get('channels.list')['channels']
-
-        for channel in channels:
-            for slack_channel in slack_channels:
-                if slack_channel['name'].lower() == channel.lower():
-                    if slack_channel['is_archived']:
-                        self.api_post('channels.unarchive', channel=slack_channel['id'])
-
-                    break
-            else:
-                self.api_post('channels.create', name=channel)
-
-    def create_dm_channels(self, channels: list):
-        self.create_channels(channels)
-        self.clean_up_dm_channels(channels)
-
-        self.last_dm_channels = channels
-
-    def clean_up_channels(self):
+    def _clean_up_channels(self):
         weechat_channels = [channel for _, channel in Config.Global.Channels.items()]
-        slack_channels = self.api_get('channels.list')['channels']
+        slack_channels = self._api_get('channels.list')['channels']
 
         # Archive all no longer necessary channels
         for channel in slack_channels:
@@ -84,10 +64,10 @@ class SlackClient:
                 if Utils.get_relay_direct_message_channel_for_buffer(channel['name']) is not None:
                     continue
 
-                self.api_post('channels.archive', channel=channel['id'])
+                self._api_post('channels.archive', channel=channel['id'])
 
-    def clean_up_dm_channels(self, channels: list):
-        slack_channels = self.api_get('channels.list')['channels']
+    def _clean_up_dm_channels(self, channels: list):
+        slack_channels = self._api_get('channels.list')['channels']
 
         # Archive all no longer necessary channels
         for channel in slack_channels:
@@ -98,16 +78,35 @@ class SlackClient:
                 if Utils.get_relay_direct_message_channel_for_buffer(channel['name']) is None:
                     continue
 
-                self.api_post('channels.archive', channel=channel['id'])
+                self._api_post('channels.archive', channel=channel['id'])
+
+    def create_channels(self, channels: list):
+        slack_channels = self._api_get('channels.list')['channels']
+
+        for channel in channels:
+            for slack_channel in slack_channels:
+                if slack_channel['name'].lower() == channel.lower():
+                    if slack_channel['is_archived']:
+                        self._api_post('channels.unarchive', channel=slack_channel['id'])
+
+                    break
+            else:
+                self._api_post('channels.create', name=channel)
+
+    def create_dm_channels(self, channels: list):
+        self.create_channels(channels)
+        self._clean_up_dm_channels(channels)
+
+        self.last_dm_channels = channels
 
     def send_message(self, channel: str, username: str, msg: str):
-        self.api_post('chat.postMessage', channel=channel, username=username, text=msg)
+        self._api_post('chat.postMessage', channel=channel, username=username, text=msg)
 
     def send_me_message(self, channel: str, msg: str):
-        self.api_post('chat.postMessage', channel=channel, username='* notice *', text=msg)
+        self._api_post('chat.postMessage', channel=channel, username='* notice *', text=msg)
 
-    def get_channel_by_id(self, channel_id: str):
-        slack_channels = self.api_get('channels.list')['channels']
+    def _get_channel_by_id(self, channel_id: str):
+        slack_channels = self._api_get('channels.list')['channels']
 
         for channel in slack_channels:
             if channel['id'] == channel_id:
@@ -115,7 +114,7 @@ class SlackClient:
 
         return None
 
-    def on_message(self, **payload):
+    def _on_message(self, **payload):
         if self.message_callback is not None:
             data = payload['data']
 
@@ -134,7 +133,7 @@ class SlackClient:
             if data['user'] == 'USLACKBOT':
                 return
 
-            channel, text = self.get_channel_by_id(data['channel'])['name'], html.unescape(data['text'])
+            channel, text = self._get_channel_by_id(data['channel'])['name'], html.unescape(data['text'])
 
             if is_me_message:
                 self.message_callback(channel, '/me ' + text)
@@ -143,11 +142,11 @@ class SlackClient:
 
             if Config.GcfUpload.URL and Config.GcfUpload.ApiKey and 'files' in data:
                 for file in data['files']:
-                    url = Utils.upload_to_gcf_upload(self.get_private_file(file['url_private']))
+                    url = Utils.upload_to_gcf_upload(self._raw_get(file['url_private']))
                     self.message_callback(channel, url)
 
             # A silly workaround to hide forwarded messages and let them reappear once they hit relay
-            self.api_post('chat.delete', channel=data['channel'], ts=data['ts'])
+            self._api_post('chat.delete', channel=data['channel'], ts=data['ts'])
 
     def set_message_callback(self, callback: callable):
         self.message_callback = callback
