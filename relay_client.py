@@ -53,13 +53,14 @@ class RelayClient(WeeChatClient):
         if self.on_buffer_line_added_callback is not None:
             self.on_buffer_line_added_callback(response)
 
-        # super()._on_buffer_line_added(response)
-
     def _on_buffer_opened(self, response: dict):
         if self.on_buffer_opened_callback is not None:
             self.on_buffer_opened_callback(response)
 
-        super()._on_buffer_opened(response)
+        buffer = WeeChatBuffer(response)
+        buffer.pointer = '0x{}'.format(response['__path'][0])
+
+        self.buffers.append(buffer)
 
     def _on_buffer_closing(self, response: dict):
         if self.on_buffer_closing_callback is not None:
