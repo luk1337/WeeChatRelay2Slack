@@ -1,4 +1,4 @@
-# weerelay2slack
+# WeeChatRelay2Slack
 
 ## Usage
 ```

@@ -7,134 +7,129 @@ from relay_client import RelayClient
 from slack_client import SlackClient
 from utils import Utils
 
-# globals
-relay_client: RelayClient
-slack_client: SlackClient
 
+class WeeChatRelay2Slack:
+    relay_client: RelayClient
+    slack_client: SlackClient
 
-def on_buffer_line_added(response: dict, run_async: bool = False):
-    global relay_client, slack_client
+    def __init__(self):
+        self.relay_client = RelayClient()
+        self.relay_client.set_on_buffer_line_added_callback(self._on_buffer_line_added)
+        self.relay_client.set_on_buffer_opened_callback_callback(self._on_buffer_opened)
+        self.relay_client.set_on_buffer_closing_callback_callback(self._on_buffer_closing)
 
-    if not run_async:
-        threading.Thread(target=on_buffer_line_added, args=(response, True)).start()
-        return
+        self.slack_client = SlackClient()
+        self.slack_client.set_message_callback(self._on_slack_message)
+        self.slack_client.create_dm_channels([buffer for _, buffer in self.relay_client.get_direct_message_buffers()])
 
-    is_generic_server_msg = bool({'irc_401',
-                                  'irc_402',
-                                  'irc_join',
-                                  'irc_kick',
-                                  'irc_mode',
-                                  'irc_nick',
-                                  'irc_part',
-                                  'irc_topic',
-                                  'irc_quit'} & set(response['tags_array']))
-    is_privmsg = 'irc_privmsg' in response['tags_array']
+    def _on_buffer_line_added(self, response: dict, run_async: bool = False):
+        if not run_async:
+            threading.Thread(target=self._on_buffer_line_added, args=(response, True)).start()
+            return
 
-    if not any((is_generic_server_msg, is_privmsg)):
-        return
+        is_generic_server_msg = bool({'irc_401',
+                                      'irc_402',
+                                      'irc_join',
+                                      'irc_kick',
+                                      'irc_mode',
+                                      'irc_nick',
+                                      'irc_part',
+                                      'irc_topic',
+                                      'irc_quit'} & set(response['tags_array']))
+        is_privmsg = 'irc_privmsg' in response['tags_array']
 
-    if response['buffer'].startswith('gui_'):
-        buffer = relay_client.wait_for_buffer_by_pointer(response['buffer'])
-    else:
-        buffer = relay_client.wait_for_buffer_by_pointer(f'0x{response["buffer"]}')
+        if not any((is_generic_server_msg, is_privmsg)):
+            return
 
-    if buffer is None:
-        logging.error(f'Timed out while waiting for buffer {response["buffer"]}')
-        return
+        if response['buffer'].startswith('gui_'):
+            buffer = self.relay_client.wait_for_buffer_by_pointer(response['buffer'])
+        else:
+            buffer = self.relay_client.wait_for_buffer_by_pointer(f'0x{response["buffer"]}')
 
-    buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(response['message'])
+        if buffer is None:
+            logging.error(f'Timed out while waiting for buffer {response["buffer"]}')
+            return
 
-    if buffer_name not in Config.Global.Channels:
-        buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
+        buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(response['message'])
+
+        if buffer_name not in Config.Global.Channels:
+            buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
+
+            if buffer_name is not None:
+                # Wait for slack channel
+                while buffer_name not in self.slack_client.last_dm_channels:
+                    pass
+        else:
+            buffer_name = Config.Global.Channels[buffer_name]
 
         if buffer_name is not None:
-            # Wait for slack channel
-            while buffer_name not in slack_client.last_dm_channels:
-                pass
-    else:
-        buffer_name = Config.Global.Channels[buffer_name]
+            if is_generic_server_msg:
+                self.slack_client.send_me_message(buffer_name, Utils.weechat_string_remove_color(response['message']))
+            elif is_privmsg:
+                prefix = Utils.weechat_string_remove_color(response['prefix'])
 
-    if buffer_name is not None:
-        if is_generic_server_msg:
-            slack_client.send_me_message(buffer_name, Utils.weechat_string_remove_color(response['message']))
-        elif is_privmsg:
-            prefix = Utils.weechat_string_remove_color(response['prefix'])
+                if 'irc_action' in response['tags_array']:
+                    self.slack_client.send_me_message(buffer_name, msg)
+                else:
+                    self.slack_client.send_message(buffer_name, prefix, msg)
 
-            if 'irc_action' in response['tags_array']:
-                slack_client.send_me_message(buffer_name, msg)
-            else:
-                slack_client.send_message(buffer_name, prefix, msg)
+    def _on_buffer_opened(self, response: dict, run_async: bool = False):
+        if not run_async:
+            threading.Thread(target=self._on_buffer_opened, args=(response, True)).start()
+            return
 
+        buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
 
-def on_buffer_opened(response: dict, run_async: bool = False):
-    global slack_client
+        if buffer_name is not None and buffer_name not in self.slack_client.last_dm_channels:
+            logging.info(f'Adding DM channel: {buffer_name}')
 
-    if not run_async:
-        threading.Thread(target=on_buffer_opened, args=(response, True)).start()
-        return
+            self.slack_client.create_dm_channels(self.slack_client.last_dm_channels + [buffer_name])
 
-    buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
+    def _on_buffer_closing(self, response: dict, run_async: bool = False):
+        if not run_async:
+            threading.Thread(target=self._on_buffer_closing, args=(response, True)).start()
+            return
 
-    if buffer_name is not None and buffer_name not in slack_client.last_dm_channels:
-        logging.info(f'Adding DM channel: {buffer_name}')
+        buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
 
-        slack_client.create_dm_channels(slack_client.last_dm_channels + [buffer_name])
+        if buffer_name is not None and buffer_name in self.slack_client.last_dm_channels:
+            logging.info(f'Closing DM channel: {buffer_name}')
 
+            self.slack_client.create_dm_channels([c for c in self.slack_client.last_dm_channels if c != buffer_name])
 
-def on_buffer_closing(response: dict, run_async: bool = False):
-    global slack_client
+    def _on_slack_message(self, channel: str, msg: str):
+        weechat_channel = Utils.get_relay_direct_message_channel_for_buffer(channel)
 
-    if not run_async:
-        threading.Thread(target=on_buffer_closing, args=(response, True)).start()
-        return
+        if weechat_channel is not None:
+            self.relay_client.input(weechat_channel, msg)
+        else:
+            for weechat_channel, slack_channel in Config.Global.Channels.items():
+                if slack_channel == channel:
+                    self.relay_client.input(weechat_channel, msg)
+                    break
 
-    buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
+    def run(self):
+        threads = [
+            *self.relay_client.tasks(),
+            *self.slack_client.tasks(),
+        ]
 
-    if buffer_name is not None and buffer_name in slack_client.last_dm_channels:
-        logging.info(f'Closing DM channel: {buffer_name}')
+        [thread.start() for thread in threads]
 
-        slack_client.create_dm_channels([c for c in slack_client.last_dm_channels if c != buffer_name])
+        try:
+            [thread.join() for thread in threads]
+        except KeyboardInterrupt:
+            logging.info('Bye!')
 
-
-def on_slack_message(channel: str, msg: str):
-    global relay_client
-
-    weechat_channel = Utils.get_relay_direct_message_channel_for_buffer(channel)
-
-    if weechat_channel is not None:
-        relay_client.input(weechat_channel, msg)
-    else:
-        for weechat_channel, slack_channel in Config.Global.Channels.items():
-            if slack_channel == channel:
-                relay_client.input(weechat_channel, msg)
-                break
+            # Kill existing threads
+            for thread in threads:
+                thread.is_alive = False
+                thread.join()
 
 
 if __name__ == '__main__':
+    # Setup logging
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 
-    relay_client = RelayClient()
-    relay_client.set_on_buffer_line_added_callback(on_buffer_line_added)
-    relay_client.set_on_buffer_opened_callback_callback(on_buffer_opened)
-    relay_client.set_on_buffer_closing_callback_callback(on_buffer_closing)
-
-    slack_client = SlackClient()
-    slack_client.set_message_callback(on_slack_message)
-    slack_client.create_dm_channels([buffer for _, buffer in relay_client.get_direct_message_buffers()])
-
-    threads = [
-        *relay_client.tasks(),
-        *slack_client.tasks(),
-    ]
-
-    [thread.start() for thread in threads]
-
-    try:
-        [thread.join() for thread in threads]
-    except KeyboardInterrupt:
-        logging.info('Bye!')
-
-        # Kill existing threads
-        for thread in threads:
-            thread.is_alive = False
-            thread.join()
+    # Run WeeChatRelay2Slack
+    WeeChatRelay2Slack().run()
