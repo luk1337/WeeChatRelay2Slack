@@ -71,9 +71,9 @@ class RelayClient(WeeChatClient):
 
             self.buffers.append(buffer)
 
-            next_buffer = resp_buf.get('next_buffer')
+            next_buffer = resp_buf.get('next_buffer', '0')
 
-            if next_buffer is None or next_buffer == '0':
+            if next_buffer == '0':
                 break
 
             pointer = f'0x{next_buffer}'
