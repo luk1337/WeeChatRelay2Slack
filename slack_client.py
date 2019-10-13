@@ -151,7 +151,7 @@ class SlackClient:
             channel, text = self._get_channel_by_id(data.get('channel')).get('name'), html.unescape(data.get('text'))
 
             if is_me_message:
-                self.message_callback(channel, '/me ' + text)
+                self.message_callback(channel, f'/me {text}')
             else:
                 self.message_callback(channel, text)
 
