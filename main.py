@@ -12,8 +12,12 @@ relay_client: RelayClient
 slack_client: SlackClient
 
 
-def on_buffer_line_added(response: dict):
+def on_buffer_line_added(response: dict, run_async: bool = False):
     global relay_client, slack_client
+
+    if not run_async:
+        threading.Thread(target=on_buffer_line_added, args=(response, True)).start()
+        return
 
     is_generic_server_msg = bool({'irc_401',
                                   'irc_402',
@@ -59,8 +63,12 @@ def on_buffer_line_added(response: dict):
                 slack_client.send_message(buffer_name, prefix, msg)
 
 
-def on_buffer_opened(response: dict):
+def on_buffer_opened(response: dict, run_async: bool = False):
     global slack_client
+
+    if not run_async:
+        threading.Thread(target=on_buffer_opened, args=(response, True)).start()
+        return
 
     buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
 
@@ -70,8 +78,12 @@ def on_buffer_opened(response: dict):
         slack_client.create_dm_channels(slack_client.last_dm_channels + [buffer_name])
 
 
-def on_buffer_closing(response: dict):
+def on_buffer_closing(response: dict, run_async: bool = False):
     global slack_client
+
+    if not run_async:
+        threading.Thread(target=on_buffer_closing, args=(response, True)).start()
+        return
 
     buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
 
