@@ -40,7 +40,7 @@ class RelayClient:
         self.sock.send_async('ping')
 
         if self.wait_for_response() is None:
-            raise Exception('Failed to receive pong back')
+            raise Exception('Failed to receive pong back, probably invalid WeeChat relay credentials')
 
     def sync_all(self):
         self.sock.send_async('sync')
