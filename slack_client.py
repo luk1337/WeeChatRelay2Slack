@@ -35,9 +35,6 @@ class SlackClient:
         # Create channels, if needed
         self.create_channels(weechat_channels)
 
-        # Invite bot to all channels
-        self.join_all_channels()
-
     def api_get(self, method: str, token: str, **kwargs):
         return json.loads(requests.get('https://slack.com/api/{}'.format(method), data=kwargs,
                                        headers={'Authorization': 'Bearer {}'.format(token)}).content)
@@ -62,9 +59,6 @@ class SlackClient:
             else:
                 self.api_post('channels.create', Config.Slack.Token, name=channel)
                 channel_created = True
-
-        if channel_created:
-            self.join_all_channels()
 
     def create_dm_channels(self, channels: list):
         self.create_channels(channels)
@@ -100,20 +94,6 @@ class SlackClient:
                     continue
 
                 self.api_post('channels.archive', Config.Slack.Token, channel=channel['id'])
-
-    def join_all_channels(self):
-        bot_user_id = self.api_post('auth.test', Config.Slack.Token)['user_id']
-        slack_channels = self.api_get('channels.list', Config.Slack.Token)['channels']
-
-        # Invite bot to all channels
-        for channel in slack_channels:
-            if channel['is_general'] or channel['is_archived']:
-                continue
-
-            if bot_user_id in channel['members']:
-                continue
-
-            self.api_post('channels.invite', Config.Slack.Token, channel=channel['id'], user=bot_user_id)
 
     def send_message(self, channel: str, username: str, msg: str):
         self.api_post('chat.postMessage', Config.Slack.Token, channel=channel, username=username, text=msg)
