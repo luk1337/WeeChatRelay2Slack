@@ -9,6 +9,7 @@ import requests
 import slack
 
 from config import Config
+from file_upload import FileUpload
 from utils import Utils
 
 
@@ -141,10 +142,14 @@ class SlackClient:
             else:
                 self.message_callback(channel, text)
 
-            if Config.GcfUpload.URL and Config.GcfUpload.ApiKey and 'files' in data:
+            if 'files' in data:
                 for file in data['files']:
-                    url = Utils.upload_to_gcf_upload(self._raw_get(file['url_private']))
-                    self.message_callback(channel, url)
+                    status, msg = FileUpload.upload(file['name'], self._raw_get(file['url_private']), file['mimetype'])
+
+                    if status:
+                        self.message_callback(channel, msg)
+                    else:
+                        self.send_message(data['channel'], '* weerelay2slack *', msg)
 
             # A silly workaround to hide forwarded messages and let them reappear once they hit relay
             self._api_post('chat.delete', channel=data['channel'], ts=data['ts'])

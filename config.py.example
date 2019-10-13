@@ -9,11 +9,23 @@ class Config:
         # https://api.slack.com/custom-integrations/legacy-tokens
         Token = ''
 
-    # Optional gcf-upload config (used for uploading files)
-    # see: https://github.com/luk1337/gcf-upload
-    class GcfUpload:
-        URL = ''
-        ApiKey = ''
+    class FileUpload:
+        Provider = 'NONE'
+
+        # see: https://github.com/luk1337/gcf-upload
+        class GcfUpload:
+            URL = ''
+            ApiKey = ''
+
+        # see: https://github.com/WeebDev/lolisafe
+        class Lolisafe:
+            URL = ''
+            Token = ''
+
+        # see: https://github.com/pomf/pomf
+        class Pomf:
+            URL = ''
+            Token = ''
 
     class Global:
         # IRC -> Slack channel mapping

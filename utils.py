@@ -70,14 +70,6 @@ class Utils:
         return None
 
     @staticmethod
-    def upload_to_gcf_upload(buffer: str):
-        return requests.post(
-            '{}/put'.format(Config.GcfUpload.URL),
-            files={'file': buffer},
-            headers={'X-Api-Key': Config.GcfUpload.ApiKey}
-        ).url
-
-    @staticmethod
     def gui_color_attr_get_flag(string: str):
         flags = {
             Utils.GUI_COLOR_EXTENDED_BOLD_CHAR: Utils.GUI_COLOR_EXTENDED_BOLD_FLAG,
