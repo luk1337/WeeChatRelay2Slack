@@ -79,11 +79,7 @@ class SlackClient:
         # Archive all no longer necessary channels
         for channel in slack_channels:
             if channel['name'] not in weechat_channels:
-                # we can't archive general channels
-                if channel['is_general']:
-                    continue
-
-                if channel['is_archived']:
+                if channel['is_general'] or channel['is_archived']:
                     continue
 
                 if Utils.get_relay_direct_message_channel_for_buffer(channel['name']) is not None:
@@ -97,11 +93,7 @@ class SlackClient:
         # Archive all no longer necessary channels
         for channel in slack_channels:
             if channel['name'] not in channels:
-                # we can't archive general channels
-                if channel['is_general']:
-                    continue
-
-                if channel['is_archived']:
+                if channel['is_general'] or channel['is_archived']:
                     continue
 
                 if Utils.get_relay_direct_message_channel_for_buffer(channel['name']) is None:
@@ -115,10 +107,7 @@ class SlackClient:
 
         # Invite bot to all channels
         for channel in slack_channels:
-            if channel['is_general']:
-                continue
-
-            if channel['is_archived']:
+            if channel['is_general'] or channel['is_archived']:
                 continue
 
             if bot_user_id in channel['members']:
