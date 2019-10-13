@@ -86,10 +86,7 @@ class RelayClient(WeeChatClient):
         if self.on_buffer_opened_callback is not None:
             self.on_buffer_opened_callback(response)
 
-        buffer = WeeChatBuffer(response)
-        buffer.pointer = f'0x{response["__path"][0]}'
-
-        self.buffers.append(buffer)
+        super()._on_buffer_opened(response)
 
     def _on_buffer_closing(self, response: dict):
         if self.on_buffer_closing_callback is not None:
