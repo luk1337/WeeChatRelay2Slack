@@ -6,8 +6,8 @@ class Config:
         UseSSL = False
 
     class Slack:
-        ApiToken = ''
-        BotToken = ''
+        # https://api.slack.com/custom-integrations/legacy-tokens
+        Token = ''
 
     # Optional gcf-upload config (used for uploading files)
     # see: https://github.com/luk1337/gcf-upload
