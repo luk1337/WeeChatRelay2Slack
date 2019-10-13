@@ -1,9 +1,11 @@
+import logging
+import socket
 import time
 from datetime import timedelta
 from threading import current_thread
 
 from config import Config
-from pyweechat.pyweechat import WeeChatClient, WeeChatBuffer
+from pyweechat.pyweechat import WeeChatClient, WeeChatBuffer, WeeChatMessage
 from utils import Utils
 
 
@@ -19,6 +21,7 @@ class RelayClient(WeeChatClient):
                          use_ssl=Config.Relay.UseSSL)
 
     def _setup(self):
+        self._check_auth()
         self._setup_buffers()
 
         # Setup event handling only after reading buffers completed
@@ -28,6 +31,29 @@ class RelayClient(WeeChatClient):
 
         # Turn synchronization on for all channels
         self.sync('*')
+
+    def _check_auth(self):
+        self.socket.send_async('ping')
+
+        start = time.time()
+        timeout = 5
+
+        while time.time() < start + timeout:
+            try:
+                response = self.socket.socket.recv(4096 * 1024)
+
+                if response is not None and WeeChatMessage(response).id == '_pong':
+                    logging.info('Successfully logged in to WeeChat Relay server!')
+                    return
+            except ConnectionResetError as e:
+                raise Exception('Failed to receive pong back from WeeChat Relay (probably wrong credentials in '
+                                'config.py)')
+            except socket.error:
+                pass
+
+            time.sleep(0.15)
+
+        raise Exception('Failed to receive pong back from WeeChat Relay (probably wrong credentials in config.py)')
 
     def _setup_buffers(self):
         pointer = 'gui_buffers'
