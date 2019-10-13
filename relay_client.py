@@ -61,7 +61,7 @@ class RelayClient(WeeChatClient):
 
         while True:
             # Read meta information
-            resp_buf = self.socket.send('hdata buffer:{}'.format(pointer)).get_hdata_result()
+            resp_buf = self.socket.send(f'hdata buffer:{pointer}').get_hdata_result()
 
             if resp_buf is None:
                 break
@@ -71,10 +71,12 @@ class RelayClient(WeeChatClient):
 
             self.buffers.append(buffer)
 
-            if resp_buf.get('next_buffer') is None or resp_buf.get('next_buffer') == '0':
+            next_buffer = resp_buf.get('next_buffer')
+
+            if next_buffer is None or next_buffer == '0':
                 break
 
-            pointer = '0x{}'.format(resp_buf.get('next_buffer'))
+            pointer = f'0x{next_buffer}'
 
     def _on_buffer_line_added(self, response: dict):
         if self.on_buffer_line_added_callback is not None:
@@ -85,7 +87,7 @@ class RelayClient(WeeChatClient):
             self.on_buffer_opened_callback(response)
 
         buffer = WeeChatBuffer(response)
-        buffer.pointer = '0x{}'.format(response['__path'][0])
+        buffer.pointer = f'0x{response["__path"][0]}'
 
         self.buffers.append(buffer)
 

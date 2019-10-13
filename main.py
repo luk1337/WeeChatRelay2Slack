@@ -36,10 +36,10 @@ def on_buffer_line_added(response: dict, run_async: bool = False):
     if response['buffer'].startswith('gui_'):
         buffer = relay_client.wait_for_buffer_by_pointer(response['buffer'])
     else:
-        buffer = relay_client.wait_for_buffer_by_pointer('0x{}'.format(response['buffer']))
+        buffer = relay_client.wait_for_buffer_by_pointer(f'0x{response["buffer"]}')
 
     if buffer is None:
-        logging.error('Timed out while waiting for buffer {}'.format(response['buffer']))
+        logging.error(f'Timed out while waiting for buffer {response["buffer"]}')
         return
 
     buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(response['message'])
@@ -76,7 +76,7 @@ def on_buffer_opened(response: dict, run_async: bool = False):
     buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
 
     if buffer_name is not None and buffer_name not in slack_client.last_dm_channels:
-        logging.info('Adding DM channel: {}'.format(buffer_name))
+        logging.info(f'Adding DM channel: {buffer_name}')
 
         slack_client.create_dm_channels(slack_client.last_dm_channels + [buffer_name])
 
@@ -91,7 +91,7 @@ def on_buffer_closing(response: dict, run_async: bool = False):
     buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
 
     if buffer_name is not None and buffer_name in slack_client.last_dm_channels:
-        logging.info('Closing DM channel: {}'.format(buffer_name))
+        logging.info(f'Closing DM channel: {buffer_name}')
 
         slack_client.create_dm_channels([c for c in slack_client.last_dm_channels if c != buffer_name])
 

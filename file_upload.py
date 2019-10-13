@@ -28,52 +28,52 @@ class FileUpload:
     @staticmethod
     def _handle_gcf_upload(filename: str, buffer: str, mime: str):
         try:
-            response = requests.post('{}/put'.format(Config.FileUpload.GcfUpload.URL),
+            response = requests.post(f'{Config.FileUpload.GcfUpload.URL}/put',
                                      files={'file': (filename, buffer, mime)},
                                      headers={'X-Api-Key': Config.FileUpload.GcfUpload.ApiKey})
         except Exception as e:
-            return False, 'Failed to upload file ({})'.format(str(e))
+            return False, f'Failed to upload file ({e})'
 
         if response.status_code != http.HTTPStatus.OK:
-            return False, 'Failed to upload file (status code: {})'.format(response.status_code)
+            return False, f'Failed to upload file (status code: {response.status_code})'
 
         return True, response.url
 
     @staticmethod
     def _handle_lolisafe(filename: str, buffer: str, mime: str):
         try:
-            request = requests.post('{}/api/upload'.format(Config.FileUpload.Lolisafe.URL),
+            request = requests.post(f'{Config.FileUpload.Lolisafe.URL}/api/upload',
                                     files={'files[]': (filename, buffer, mime)},
                                     headers={'token': Config.FileUpload.Lolisafe.Token})
         except Exception as e:
-            return False, 'Failed to upload file ({})'.format(str(e))
+            return False, f'Failed to upload file ({e})'
 
         try:
             response = request.json()
         except ValueError as e:
-            return False, 'Failed to upload file ({})'.format(str(e))
+            return False, f'Failed to upload file ({e})'
 
         if request.status_code != http.HTTPStatus.OK:
-            return False, 'Failed to upload file (status code: {})'.format(response['description'])
+            return False, f'Failed to upload file ({response["description"]})'
 
         return True, response['files'][0]['url']
 
     @staticmethod
     def _handle_pomf(filename: str, buffer: str, mime: str):
         try:
-            request = requests.post('{}/upload.php'.format(Config.FileUpload.Pomf.URL),
+            request = requests.post(f'{Config.FileUpload.Pomf.URL}/upload.php',
                                     files={'files[]': (filename, buffer, mime)},
                                     headers={'token': Config.FileUpload.Pomf.Token})
         except Exception as e:
-            return False, 'Failed to upload file ({})'.format(str(e))
+            return False, f'Failed to upload file ({e})'
 
         try:
             response = request.json()
         except ValueError as e:
-            return False, 'Failed to upload file ({})'.format(str(e))
+            return False, f'Failed to upload file ({e})'
 
         if request.status_code != http.HTTPStatus.OK:
-            return False, 'Failed to upload file (status code: {})'.format(response['description'])
+            return False, f'Failed to upload file ({response["description"]})'
 
         return True, response['files'][0]['url']
 

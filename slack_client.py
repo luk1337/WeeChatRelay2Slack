@@ -30,15 +30,15 @@ class SlackClient:
         self.last_dm_channels = []
 
     def _api_get(self, method: str, **kwargs):
-        return json.loads(requests.get('https://slack.com/api/{}'.format(method), data=kwargs,
-                                       headers={'Authorization': 'Bearer {}'.format(Config.Slack.Token)}).content)
+        return json.loads(requests.get(f'https://slack.com/api/{method}', data=kwargs,
+                                       headers={'Authorization': f'Bearer {Config.Slack.Token}'}).content)
 
     def _api_post(self, method: str, **kwargs):
-        return json.loads(requests.post('https://slack.com/api/{}'.format(method), data=kwargs,
-                                        headers={'Authorization': 'Bearer {}'.format(Config.Slack.Token)}).content)
+        return json.loads(requests.post(f'https://slack.com/api/{method}', data=kwargs,
+                                        headers={'Authorization': f'Bearer {Config.Slack.Token}'}).content)
 
     def _raw_get(self, url: str):
-        return requests.get(url, headers={'Authorization': 'Bearer {}'.format(Config.Slack.Token)}).content
+        return requests.get(url, headers={'Authorization': f'Bearer {Config.Slack.Token}'}).content
 
     def _check_auth(self):
         response = self._api_get('auth.test')
