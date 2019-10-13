@@ -27,13 +27,11 @@ class SlackClient:
         self.last_dm_channels = []
 
     def sync_channels(self):
-        weechat_channels = [channel for _, channel in Config.Global.Channels.items()]
-
         # Clean-up no longer needed non-dm channels
         self.clean_up_channels()
 
         # Create channels, if needed
-        self.create_channels(weechat_channels)
+        self.create_channels([channel for _, channel in Config.Global.Channels.items()])
 
     def api_get(self, method: str, token: str, **kwargs):
         return json.loads(requests.get('https://slack.com/api/{}'.format(method), data=kwargs,
