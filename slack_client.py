@@ -1,6 +1,7 @@
 import asyncio
 import html
 import json
+import logging
 import threading
 import time
 from threading import current_thread
@@ -100,6 +101,18 @@ class SlackClient:
         self._clean_up_dm_channels(channels)
 
         self.last_dm_channels = channels
+
+    def wait_for_dm_channel(self, channel: str, timeout: int = 5):
+        start = time.time()
+
+        while time.time() < start + timeout:
+            if channel in self.last_dm_channels:
+                return
+
+            time.sleep(0.15)
+
+        logging.info('Timed out while waiting for DM channel, attempting to create one manually')
+        self.create_dm_channels(self.last_dm_channels + [channel])
 
     def send_message(self, channel: str, username: str, msg: str):
         self._api_post('chat.postMessage', channel=channel, username=username, text=msg)

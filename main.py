@@ -60,9 +60,7 @@ class WeeChatRelay2Slack:
             buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
 
             if buffer_name is not None:
-                # Wait for slack channel
-                while buffer_name not in self.slack_client.last_dm_channels:
-                    pass
+                self.slack_client.wait_for_dm_channel(buffer_name)
         else:
             buffer_name = Config.Global.Channels[buffer_name]
 
