@@ -56,7 +56,12 @@ class FileUpload:
         if request.status_code != http.HTTPStatus.OK:
             return False, f'Failed to upload file ({response["description"]})'
 
-        return True, response['files'][0]['url']
+        files = response.get('files', [])
+
+        if len(files) == 0:
+            return False, f'Failed to upload file (len(files) == 0)'
+
+        return True, files[0].get('url')
 
     @staticmethod
     def _handle_pomf(filename: str, buffer: str, mime: str):
@@ -75,7 +80,12 @@ class FileUpload:
         if request.status_code != http.HTTPStatus.OK:
             return False, f'Failed to upload file ({response["description"]})'
 
-        return True, response['files'][0]['url']
+        files = response.get('files', [])
+
+        if len(files) == 0:
+            return False, f'Failed to upload file (len(files) == 0)'
+
+        return True, files[0].get('url')
 
     @staticmethod
     def upload(filename: str, buffer: str, mime: str):

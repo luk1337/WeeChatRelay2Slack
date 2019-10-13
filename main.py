@@ -35,22 +35,22 @@ class WeeChatRelay2Slack:
                                       'irc_nick',
                                       'irc_part',
                                       'irc_topic',
-                                      'irc_quit'} & set(response['tags_array']))
-        is_privmsg = 'irc_privmsg' in response['tags_array']
+                                      'irc_quit'} & set(response.get('tags_array', [])))
+        is_privmsg = 'irc_privmsg' in response.get('tags_array', [])
 
         if not any((is_generic_server_msg, is_privmsg)):
             return
 
-        if response['buffer'].startswith('gui_'):
-            buffer = self.relay_client.wait_for_buffer_by_pointer(response['buffer'])
+        if response.get('buffer', '').startswith('gui_'):
+            buffer = self.relay_client.wait_for_buffer_by_pointer(response.get('buffer', ''))
         else:
-            buffer = self.relay_client.wait_for_buffer_by_pointer(f'0x{response["buffer"]}')
+            buffer = self.relay_client.wait_for_buffer_by_pointer(f'0x{response.get("buffer", "")}')
 
         if buffer is None:
-            logging.error(f'Timed out while waiting for buffer {response["buffer"]}')
+            logging.error(f'Timed out while waiting for buffer {response.get("buffer", "")}')
             return
 
-        buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(response['message'])
+        buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(response.get('message', ''))
 
         if buffer_name not in Config.Global.Channels:
             buffer_name = Utils.get_slack_direct_message_channel_for_buffer(buffer_name)
@@ -64,11 +64,12 @@ class WeeChatRelay2Slack:
 
         if buffer_name is not None:
             if is_generic_server_msg:
-                self.slack_client.send_me_message(buffer_name, Utils.weechat_string_remove_color(response['message']))
+                self.slack_client.send_me_message(
+                    buffer_name, Utils.weechat_string_remove_color(response.get('message', '')))
             elif is_privmsg:
-                prefix = Utils.weechat_string_remove_color(response['prefix'])
+                prefix = Utils.weechat_string_remove_color(response.get('prefix', ''))
 
-                if 'irc_action' in response['tags_array']:
+                if 'irc_action' in response.get('tags_array', []):
                     self.slack_client.send_me_message(buffer_name, msg)
                 else:
                     self.slack_client.send_message(buffer_name, prefix, msg)
@@ -78,7 +79,7 @@ class WeeChatRelay2Slack:
             threading.Thread(target=self._on_buffer_opened, args=(response, True)).start()
             return
 
-        buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
+        buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response.get('full_name', ''))
 
         if buffer_name is not None and buffer_name not in self.slack_client.last_dm_channels:
             logging.info(f'Adding DM channel: {buffer_name}')
@@ -90,7 +91,7 @@ class WeeChatRelay2Slack:
             threading.Thread(target=self._on_buffer_closing, args=(response, True)).start()
             return
 
-        buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response['full_name'])
+        buffer_name = Utils.get_slack_direct_message_channel_for_buffer(response.get('full_name', ''))
 
         if buffer_name is not None and buffer_name in self.slack_client.last_dm_channels:
             logging.info(f'Closing DM channel: {buffer_name}')
