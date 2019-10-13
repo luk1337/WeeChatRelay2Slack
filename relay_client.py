@@ -87,14 +87,15 @@ class RelayClient(WeeChatClient):
 
         return ret
 
-    def wait_for_buffer_by_pointer(self, pointer: str):
+    def wait_for_buffer_by_pointer(self, pointer: str, timeout: int = 5):
         buffer = None
+        start = time.time()
 
-        while buffer is None:
+        while time.time() < start + timeout and buffer is None:
             buffer = self.get_buffer_by_pointer(pointer)
             time.sleep(0.15)
 
         return buffer
 
     def run_thread(self):
-        self.run(lambda: current_thread().is_alive, timedelta(0, 0, 0, 100))
+        self.run(lambda: current_thread().is_alive, timedelta(milliseconds=100))
