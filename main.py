@@ -93,8 +93,7 @@ def on_buffer_closing(response: dict, run_async: bool = False):
     if buffer_name is not None and buffer_name in slack_client.last_dm_channels:
         logging.info('Closing DM channel: {}'.format(buffer_name))
 
-        slack_client.last_dm_channels.remove(buffer_name)
-        slack_client.clean_up_dm_channels(slack_client.last_dm_channels)
+        slack_client.create_dm_channels([c for c in slack_client.last_dm_channels if c != buffer_name])
 
 
 def on_slack_message(channel: str, msg: str):
