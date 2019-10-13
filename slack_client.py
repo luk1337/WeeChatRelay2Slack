@@ -44,19 +44,15 @@ class SlackClient:
     def create_channels(self, channels: list):
         slack_channels = self.api_get('channels.list', Config.Slack.Token)['channels']
 
-        channel_created = False
-
         for channel in channels:
             for slack_channel in slack_channels:
                 if slack_channel['name'].lower() == channel.lower():
                     if slack_channel['is_archived']:
                         self.api_post('channels.unarchive', Config.Slack.Token, channel=slack_channel['id'])
-                        channel_created = True
 
                     break
             else:
                 self.api_post('channels.create', Config.Slack.Token, name=channel)
-                channel_created = True
 
     def create_dm_channels(self, channels: list):
         self.create_channels(channels)
