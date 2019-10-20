@@ -43,7 +43,7 @@ class Utils:
     def sanitize_slack_channel_name(full_name: str, prefix_length: int):
         # According to slack channel names can only contain lowercase letters,
         # numbers, hyphens, and underscores, and must be 80 characters or less.
-        return re.sub(r'[^a-z-_&#]', '_', full_name[prefix_length:prefix_length + 80].lower())
+        return re.sub(r'[^a-z0-9-_&#]', '_', full_name[prefix_length:prefix_length + 80].lower())
 
     @staticmethod
     def get_relay_direct_message_channel_for_buffer(full_name: str):
