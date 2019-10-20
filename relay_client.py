@@ -45,7 +45,7 @@ class RelayClient(WeeChatClient):
                 if response is not None and WeeChatMessage(response).id == '_pong':
                     logging.info('Successfully logged in to WeeChat Relay server!')
                     return
-            except ConnectionResetError as e:
+            except ConnectionResetError:
                 raise Exception('Failed to receive pong back from WeeChat Relay (probably wrong credentials in '
                                 'config.py)')
             except socket.error:
