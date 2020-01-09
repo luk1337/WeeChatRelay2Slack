@@ -54,6 +54,11 @@ class WeeChatRelay2Slack:
             logging.error(f'Timed out while waiting for buffer {buffer_pointer}')
             return
 
+        if buffer.full_name in Config.Relay.Filters:
+            for filter_tags in Config.Relay.Filters[buffer.full_name]:
+                if all(x in tags_array for x in filter_tags.split('+')):
+                    return True
+
         buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(message)
 
         if buffer_name not in Config.Global.Channels:

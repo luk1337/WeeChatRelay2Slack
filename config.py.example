@@ -5,6 +5,14 @@ class Config:
         Port = 0
         UseSSL = False
 
+        # Filters are used to /filter/ out messages based on irc_tags
+        Filters = {
+            'irc.freenode.#lineageos': [
+                'nick_test+irc_join',
+                'nick_test+irc_quit',
+            ],
+        }
+
     class Slack:
         # https://api.slack.com/custom-integrations/legacy-tokens
         Token = ''
