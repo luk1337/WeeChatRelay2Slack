@@ -57,7 +57,7 @@ class WeeChatRelay2Slack:
         if buffer.full_name in Config.Relay.Filters:
             for filter_tags in Config.Relay.Filters[buffer.full_name]:
                 if all(x in tags_array for x in filter_tags.split('+')):
-                    return True
+                    return
 
         buffer_name, msg = buffer.full_name, Utils.weechat_string_remove_color(message)
 
