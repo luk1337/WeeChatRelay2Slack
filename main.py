@@ -37,6 +37,7 @@ class WeeChatRelay2Slack:
                                       'irc_kick',
                                       'irc_mode',
                                       'irc_nick',
+                                      'irc_nick_back',
                                       'irc_part',
                                       'irc_topic',
                                       'irc_quit'} & set(tags_array))
