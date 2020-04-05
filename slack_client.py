@@ -11,7 +11,6 @@ import slack
 
 from config import Config
 from file_upload import FileUpload
-from utils import Utils
 
 
 class SlackClient:
@@ -55,6 +54,8 @@ class SlackClient:
         self.create_channels([channel for _, channel in Config.Global.Channels.items()])
 
     def _clean_up_channels(self):
+        from main import WeeChatRelay2Slack
+
         weechat_channels = [channel for _, channel in Config.Global.Channels.items()]
         slack_channels = self._api_get('channels.list').get('channels', [])
 
@@ -64,12 +65,14 @@ class SlackClient:
                 if channel.get('is_general') or channel.get('is_archived'):
                     continue
 
-                if Utils.get_relay_direct_message_channel_for_buffer(channel.get('name')) is not None:
+                if channel.get('name') in WeeChatRelay2Slack.s2w_dm_channels_map:
                     continue
 
                 self._api_post('channels.archive', channel=channel.get('id'))
 
     def _clean_up_dm_channels(self, channels: list):
+        from main import WeeChatRelay2Slack
+
         slack_channels = self._api_get('channels.list').get('channels', [])
 
         # Archive all no longer necessary channels
@@ -78,7 +81,7 @@ class SlackClient:
                 if channel.get('is_general') or channel.get('is_archived'):
                     continue
 
-                if Utils.get_relay_direct_message_channel_for_buffer(channel.get('name')) is None:
+                if channel.get('name') not in WeeChatRelay2Slack.s2w_dm_channels_map:
                     continue
 
                 self._api_post('channels.archive', channel=channel.get('id'))

@@ -13,8 +13,12 @@ class RelayClient(WeeChatClient):
     on_buffer_line_added_callback: callable
     on_buffer_opened_callback: callable
     on_buffer_closing_callback: callable
+    on_post_setup_buffers_callback: callable
 
     def __init__(self):
+        pass
+
+    def init(self):
         super().__init__(hostname=Config.Relay.Hostname,
                          password=Config.Relay.Password,
                          port=Config.Relay.Port,
@@ -77,6 +81,8 @@ class RelayClient(WeeChatClient):
 
             pointer = f'0x{next_buffer}'
 
+        self.on_post_setup_buffers_callback()
+
     def _on_buffer_line_added(self, response: dict):
         if self.on_buffer_line_added_callback is not None:
             self.on_buffer_line_added_callback(response)
@@ -96,11 +102,14 @@ class RelayClient(WeeChatClient):
     def set_on_buffer_line_added_callback(self, f: callable):
         self.on_buffer_line_added_callback = f
 
-    def set_on_buffer_opened_callback_callback(self, f: callable):
+    def set_on_buffer_opened_callback(self, f: callable):
         self.on_buffer_opened_callback = f
 
-    def set_on_buffer_closing_callback_callback(self, f: callable):
+    def set_on_buffer_closing_callback(self, f: callable):
         self.on_buffer_closing_callback = f
+
+    def set_on_post_setup_buffers_callback(self, f: callable):
+        self.on_post_setup_buffers_callback = f
 
     def get_direct_message_buffers(self):
         ret = []
