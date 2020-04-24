@@ -54,8 +54,6 @@ class SlackClient:
         self.create_channels([channel for _, channel in Config.Global.Channels.items()])
 
     def _clean_up_channels(self):
-        from main import WeeChatRelay2Slack
-
         weechat_channels = [channel for _, channel in Config.Global.Channels.items()]
         slack_channels = self._api_get('channels.list').get('channels', [])
 
@@ -65,14 +63,9 @@ class SlackClient:
                 if channel.get('is_general') or channel.get('is_archived'):
                     continue
 
-                if channel.get('name') in WeeChatRelay2Slack.s2w_dm_channels_map:
-                    continue
-
                 self._api_post('channels.archive', channel=channel.get('id'))
 
-    def _clean_up_dm_channels(self, channels: list):
-        from main import WeeChatRelay2Slack
-
+    def _clean_up_dm_channels(self, channels: list, s2w_dm_channels_map: dict):
         slack_channels = self._api_get('channels.list').get('channels', [])
 
         # Archive all no longer necessary channels
@@ -81,7 +74,7 @@ class SlackClient:
                 if channel.get('is_general') or channel.get('is_archived'):
                     continue
 
-                if channel.get('name') not in WeeChatRelay2Slack.s2w_dm_channels_map:
+                if channel.get('name') not in s2w_dm_channels_map:
                     continue
 
                 self._api_post('channels.archive', channel=channel.get('id'))
@@ -99,9 +92,9 @@ class SlackClient:
             else:
                 self._api_post('channels.create', name=channel)
 
-    def create_dm_channels(self, channels: list):
+    def create_dm_channels(self, channels: list, s2w_dm_channels_map: dict):
         self.create_channels(channels)
-        self._clean_up_dm_channels(channels)
+        self._clean_up_dm_channels(channels, s2w_dm_channels_map)
 
         self.last_dm_channels = channels
 

@@ -25,7 +25,8 @@ class WeeChatRelay2Slack:
 
         self.slack_client = SlackClient()
         self.slack_client.set_message_callback(self._on_slack_message)
-        self.slack_client.create_dm_channels([buffer for _, buffer in self.relay_client.get_direct_message_buffers()])
+        self.slack_client.create_dm_channels([buffer for _, buffer in self.relay_client.get_direct_message_buffers()],
+                                             self.s2w_dm_channels_map)
 
     def _on_buffer_line_added(self, response: dict, run_async: bool = False):
         if not run_async:
@@ -99,7 +100,8 @@ class WeeChatRelay2Slack:
         if buffer_name not in self.slack_client.last_dm_channels:
             logging.info(f'Adding DM channel: {buffer_name}')
 
-            self.slack_client.create_dm_channels(self.slack_client.last_dm_channels + [buffer_name])
+            self.slack_client.create_dm_channels(self.slack_client.last_dm_channels + [buffer_name],
+                                                 self.s2w_dm_channels_map)
 
         self.s2w_dm_channels_map[buffer_name] = full_name
 
@@ -117,10 +119,11 @@ class WeeChatRelay2Slack:
         if buffer_name in self.slack_client.last_dm_channels:
             logging.info(f'Closing DM channel: {buffer_name}')
 
-            self.slack_client.create_dm_channels([c for c in self.slack_client.last_dm_channels if c != buffer_name])
+            self.slack_client.create_dm_channels([c for c in self.slack_client.last_dm_channels if c != buffer_name],
+                                                 self.s2w_dm_channels_map)
 
         if buffer_name in self.s2w_dm_channels_map:
-            self.s2w_dm_channels_map[buffer_name].pop()
+            del self.s2w_dm_channels_map[buffer_name]
 
     def _on_slack_message(self, channel: str, msg: str):
         weechat_channel = self.s2w_dm_channels_map[channel] if channel in self.s2w_dm_channels_map else None
