@@ -7,5 +7,5 @@ idna==2.8
 multidict==4.6.1
 requests==2.22.0
 slackclient==2.4.0
-urllib3==1.25.7
+urllib3==1.25.8
 yarl==1.4.1
